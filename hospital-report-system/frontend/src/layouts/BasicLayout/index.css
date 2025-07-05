@@ -1,0 +1,66 @@
+.basic-layout {
+  min-height: 100vh;
+}
+
+.main-layout {
+  margin-left: 256px;
+  transition: margin-left 0.2s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-layout.collapsed {
+  margin-left: 80px;
+}
+
+.main-content {
+  flex: 1;
+  background: #f0f2f5;
+  overflow: auto;
+}
+
+.content-wrapper {
+  padding: 24px;
+  min-height: calc(100vh - 64px - 49px); /* 减去header和breadcrumb的高度 */
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-layout {
+    margin-left: 0;
+  }
+  
+  .main-layout.collapsed {
+    margin-left: 0;
+  }
+  
+  .content-wrapper {
+    padding: 16px;
+  }
+}
+
+/* 确保内容区域的滚动 */
+.main-content {
+  height: calc(100vh - 64px); /* 减去header高度 */
+  overflow-y: auto;
+}
+
+/* 自定义滚动条 */
+.main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

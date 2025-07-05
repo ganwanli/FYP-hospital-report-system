@@ -1,0 +1,113 @@
+# 生产环境配置
+spring:
+  # 数据源配置
+  datasource:
+    primary:
+      url: jdbc:mysql://prod-mysql-host:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=true
+      username: ${DB_USERNAME:prod_user}
+      password: ${DB_PASSWORD:prod_password}
+      hikari:
+        pool-name: HikariCP-Primary-Prod
+        minimum-idle: 10
+        maximum-pool-size: 50
+        connection-timeout: 60000
+        validation-timeout: 3000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:prod-redis-host}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:redis_password}
+    database: 0
+    timeout: 10000ms
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:hospitalReportSystemProdSecretKey2024VerySecureAndLongEnoughForProduction}
+  expiration: 7200000  # 2小时
+
+# 日志配置
+logging:
+  level:
+    root: WARN
+    com.hospital.report: INFO
+    org.springframework.security: WARN
+  pattern:
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+  file:
+    name: /var/log/hospital-report/hospital-report-system.log
+    max-size: 200MB
+    max-history: 60
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: 
+  global-config:
+    banner: false
+
+# Swagger配置 - 生产环境关闭
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# 应用自定义配置
+app:
+  # 多数据源配置
+  datasource:
+    dynamic:
+      enabled: true
+      datasource:
+        master:
+          url: jdbc:mysql://${DB_MASTER_HOST:prod-mysql-master}:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=true
+          username: ${DB_MASTER_USERNAME:master_user}
+          password: ${DB_MASTER_PASSWORD:master_password}
+          hikari:
+            minimum-idle: 10
+            maximum-pool-size: 50
+        slave:
+          url: jdbc:mysql://${DB_SLAVE_HOST:prod-mysql-slave}:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=true
+          username: ${DB_SLAVE_USERNAME:slave_user}
+          password: ${DB_SLAVE_PASSWORD:slave_password}
+          hikari:
+            minimum-idle: 5
+            maximum-pool-size: 30
+
+  # 安全配置
+  security:
+    cors:
+      allowed-origins: 
+        - https://hospital-report.company.com
+        - https://report.hospital.com
+
+  # 文件存储配置
+  file:
+    upload-path: ${FILE_UPLOAD_PATH:/opt/hospital-report/uploads}
+    max-size: 10485760
+
+# 生产环境服务器配置
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    threads:
+      max: 300
+      min-spare: 20
+    max-connections: 20000
+    accept-count: 100
+    max-http-post-size: 104857600
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+  server:
+    port: ${MANAGEMENT_PORT:8081}
