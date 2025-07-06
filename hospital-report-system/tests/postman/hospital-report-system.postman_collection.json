@@ -1,0 +1,772 @@
+{
+  "info": {
+    "name": "Hospital Report System API Tests",
+    "description": "Comprehensive API testing for Hospital Report System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dataSourceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication Tests",
+      "item": [
+        {
+          "name": "User Registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('id');",
+                  "    pm.expect(responseJson.data).to.have.property('username');",
+                  "    pm.expect(responseJson.data).to.have.property('email');",
+                  "    ",
+                  "    // Store user ID for later tests",
+                  "    pm.collectionVariables.set('userId', responseJson.data.id);",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 2000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type is application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser_{{$randomInt}}\",\n  \"password\": \"password123\",\n  \"email\": \"test{{$randomInt}}@example.com\",\n  \"realName\": \"测试用户\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('token');",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "    ",
+                  "    // Store auth token for subsequent requests",
+                  "    pm.collectionVariables.set('authToken', responseJson.data.token);",
+                  "});",
+                  "",
+                  "pm.test('Token is not empty', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.token).to.not.be.empty;",
+                  "});",
+                  "",
+                  "pm.test('User object contains required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data.user).to.have.property('username');",
+                  "    pm.expect(responseJson.data.user).to.have.property('email');",
+                  "    pm.expect(responseJson.data.user).to.have.property('role');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid login returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is present', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.message).to.include('用户名或密码错误');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"invaliduser\",\n  \"password\": \"invalidpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "DataSource Management Tests",
+      "item": [
+        {
+          "name": "Create DataSource",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('DataSource created successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('id');",
+                  "    pm.expect(responseJson.data.name).to.equal('测试数据源');",
+                  "    pm.expect(responseJson.data.type).to.equal('MYSQL');",
+                  "    ",
+                  "    // Store dataSource ID for later tests",
+                  "    pm.collectionVariables.set('dataSourceId', responseJson.data.id);",
+                  "});",
+                  "",
+                  "pm.test('DataSource has correct properties', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property('host');",
+                  "    pm.expect(responseJson.data).to.have.property('port');",
+                  "    pm.expect(responseJson.data).to.have.property('database');",
+                  "    pm.expect(responseJson.data).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试数据源\",\n  \"type\": \"MYSQL\",\n  \"host\": \"localhost\",\n  \"port\": 3306,\n  \"database\": \"test_db\",\n  \"username\": \"root\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datasources",
+              "host": ["{{baseUrl}}"],
+              "path": ["datasources"]
+            }
+          }
+        },
+        {
+          "name": "Get DataSources",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get dataSources successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('DataSources contain required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data.length > 0) {",
+                  "        const dataSource = responseJson.data[0];",
+                  "        pm.expect(dataSource).to.have.property('id');",
+                  "        pm.expect(dataSource).to.have.property('name');",
+                  "        pm.expect(dataSource).to.have.property('type');",
+                  "        pm.expect(dataSource).to.have.property('status');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/datasources",
+              "host": ["{{baseUrl}}"],
+              "path": ["datasources"]
+            }
+          }
+        },
+        {
+          "name": "Test DataSource Connection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Connection test completed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.be.a('boolean');",
+                  "});",
+                  "",
+                  "pm.test('Response time is reasonable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/datasources/{{dataSourceId}}/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["datasources", "{{dataSourceId}}", "test"]
+            }
+          }
+        },
+        {
+          "name": "Execute SQL Query",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL execution completed', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('success');",
+                  "});",
+                  "",
+                  "pm.test('SQL result structure is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data.success) {",
+                  "        pm.expect(responseJson.data).to.have.property('columns');",
+                  "        pm.expect(responseJson.data).to.have.property('data');",
+                  "        pm.expect(responseJson.data).to.have.property('rowCount');",
+                  "        pm.expect(responseJson.data).to.have.property('executionTime');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataSourceId\": {{dataSourceId}},\n  \"sql\": \"SELECT 1 as test_column\",\n  \"parameters\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datasources/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["datasources", "execute"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Report Management Tests",
+      "item": [
+        {
+          "name": "Create Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Report created successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('id');",
+                  "    pm.expect(responseJson.data.name).to.equal('测试报表');",
+                  "    ",
+                  "    // Store report ID for later tests",
+                  "    pm.collectionVariables.set('reportId', responseJson.data.id);",
+                  "});",
+                  "",
+                  "pm.test('Report has correct structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property('description');",
+                  "    pm.expect(responseJson.data).to.have.property('dataSourceId');",
+                  "    pm.expect(responseJson.data).to.have.property('canvasWidth');",
+                  "    pm.expect(responseJson.data).to.have.property('canvasHeight');",
+                  "    pm.expect(responseJson.data).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"测试报表\",\n  \"description\": \"这是一个测试报表\",\n  \"dataSourceId\": {{dataSourceId}},\n  \"canvasWidth\": 800,\n  \"canvasHeight\": 600,\n  \"componentsJson\": \"[]\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "Get Reports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get reports successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Reports contain required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data.length > 0) {",
+                  "        const report = responseJson.data[0];",
+                  "        pm.expect(report).to.have.property('id');",
+                  "        pm.expect(report).to.have.property('name');",
+                  "        pm.expect(report).to.have.property('dataSourceId');",
+                  "        pm.expect(report).to.have.property('status');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get report by ID successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('id');",
+                  "    pm.expect(responseJson.data.name).to.equal('测试报表');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}"]
+            }
+          }
+        },
+        {
+          "name": "Generate Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Report generation successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.data).to.have.property('reportId');",
+                  "    pm.expect(responseJson.data).to.have.property('reportName');",
+                  "    pm.expect(responseJson.data).to.have.property('components');",
+                  "});",
+                  "",
+                  "pm.test('Generation metadata is present', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.data).to.have.property('generatedAt');",
+                  "    pm.expect(responseJson.data).to.have.property('generationTime');",
+                  "    pm.expect(responseJson.data).to.have.property('componentCount');",
+                  "});",
+                  "",
+                  "pm.test('Generation time is reasonable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2023-01-01\",\n  \"endDate\": \"2023-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Export Report to PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PDF export successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "});",
+                  "",
+                  "pm.test('PDF file is not empty', function () {",
+                  "    pm.expect(pm.response.responseSize).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('Export time is reasonable', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(15000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parameters\": {\n    \"startDate\": \"2023-01-01\",\n    \"endDate\": \"2023-12-31\"\n  },\n  \"options\": {\n    \"pageSize\": \"A4\",\n    \"orientation\": \"PORTRAIT\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/export/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "export", "pdf"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security Tests",
+      "item": [
+        {
+          "name": "Unauthorized Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthorized access returns 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('No sensitive data in response', function () {",
+                  "    const responseText = pm.response.text();",
+                  "    pm.expect(responseText).to.not.include('password');",
+                  "    pm.expect(responseText).to.not.include('secret');",
+                  "    pm.expect(responseText).to.not.include('token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "SQL Injection Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('SQL injection attempt handled safely', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data && !responseJson.data.success) {",
+                  "        pm.expect(responseJson.data.errorMessage).to.include('危险SQL');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('No database error details exposed', function () {",
+                  "    const responseText = pm.response.text();",
+                  "    pm.expect(responseText).to.not.include('SQLException');",
+                  "    pm.expect(responseText).to.not.include('mysql');",
+                  "    pm.expect(responseText).to.not.include('ORA-');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataSourceId\": {{dataSourceId}},\n  \"sql\": \"SELECT * FROM users; DROP TABLE users; --\",\n  \"parameters\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/datasources/execute",
+              "host": ["{{baseUrl}}"],
+              "path": ["datasources", "execute"]
+            }
+          }
+        },
+        {
+          "name": "XSS Prevention Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('XSS script in input handled safely', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseText = pm.response.text();",
+                  "    pm.expect(responseText).to.not.include('<script>');",
+                  "    pm.expect(responseText).to.not.include('javascript:');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"<script>alert('XSS')</script>\",\n  \"description\": \"Test report\",\n  \"dataSourceId\": {{dataSourceId}},\n  \"canvasWidth\": 800,\n  \"canvasHeight\": 600,\n  \"componentsJson\": \"[]\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Performance Tests",
+      "item": [
+        {
+          "name": "Bulk Report Generation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Bulk operation completes within acceptable time', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+                  "});",
+                  "",
+                  "pm.test('System remains stable under load', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2023-01-01\",\n  \"endDate\": \"2023-12-31\",\n  \"includeDetails\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "generate"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

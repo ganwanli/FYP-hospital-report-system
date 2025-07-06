@@ -1,2 +1,6 @@
 export * from './auth'
 export * from './system'
+export * from './datasource'
+export * from './sync'
+export * from './dictionary'
+export * from './lineage'

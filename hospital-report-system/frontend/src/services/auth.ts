@@ -1,7 +1,7 @@
 import { http } from '@/utils/request'
-import type { LoginRequest, LoginResponse, RefreshTokenResponse, User } from '@/types'
+import type { LoginRequest, LoginResponse, RefreshTokenResponse, UserInfo } from '@/types'
 
-export const authApi = {
+export const authAPI = {
   // 登录
   login: (data: LoginRequest): Promise<LoginResponse> => {
     return http.post('/auth/login', data)
@@ -18,8 +18,18 @@ export const authApi = {
   },
   
   // 获取用户信息
-  getUserInfo: (): Promise<User> => {
-    return http.get('/auth/user')
+  getUserInfo: (): Promise<UserInfo> => {
+    return http.get('/auth/me')
+  },
+  
+  // 获取用户权限
+  getUserPermissions: (): Promise<string[]> => {
+    return http.get('/auth/permissions')
+  },
+  
+  // 检查权限
+  checkPermission: (permission: string): Promise<boolean> => {
+    return http.get(`/auth/check-permission?permission=${permission}`)
   },
   
   // 修改密码

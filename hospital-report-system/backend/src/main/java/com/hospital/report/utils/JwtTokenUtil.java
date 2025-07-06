@@ -230,4 +230,25 @@ public class JwtTokenUtil {
             return 0;
         }
     }
+    
+    /**
+     * 获取token过期时间
+     */
+    public long getExpirationTime() {
+        return expiration;
+    }
+    
+    /**
+     * 验证refresh token
+     */
+    public Boolean validateRefreshToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            String type = claims.get("type", String.class);
+            return "refresh".equals(type) && !isTokenExpired(token);
+        } catch (Exception e) {
+            logger.error("Refresh token验证失败: {}", e.getMessage());
+            return false;
+        }
+    }
 }

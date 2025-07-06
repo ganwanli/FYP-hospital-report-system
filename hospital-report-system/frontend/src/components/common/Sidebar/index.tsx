@@ -12,6 +12,11 @@ import {
   FileTextOutlined,
   LineChartOutlined,
   SettingOutlined,
+  BookOutlined,
+  NodeIndexOutlined,
+  BranchesOutlined,
+  SearchOutlined,
+  BugOutlined,
 } from '@ant-design/icons'
 import { useAppStore } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -107,6 +112,40 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         },
       ].filter(Boolean),
     },
+    hasPermission(['DICTIONARY_MANAGE']) && {
+      key: '/dictionary',
+      icon: <BookOutlined />,
+      label: '数据字典',
+      children: [
+        {
+          key: '/dictionary',
+          icon: <BookOutlined />,
+          label: '字典管理',
+        },
+      ],
+    },
+    hasPermission(['LINEAGE_MANAGE', 'LINEAGE_ANALYSIS', 'LINEAGE_QUERY']) && {
+      key: '/lineage',
+      icon: <NodeIndexOutlined />,
+      label: '数据血缘',
+      children: [
+        hasPermission(['LINEAGE_MANAGE']) && {
+          key: '/lineage',
+          icon: <BranchesOutlined />,
+          label: '血缘管理',
+        },
+        hasPermission(['LINEAGE_ANALYSIS']) && {
+          key: '/lineage/impact',
+          icon: <BugOutlined />,
+          label: '影响分析',
+        },
+        hasPermission(['LINEAGE_QUERY']) && {
+          key: '/lineage/search',
+          icon: <SearchOutlined />,
+          label: '血缘搜索',
+        },
+      ].filter(Boolean),
+    },
   ].filter(Boolean) as MenuItem[]
 
   // 获取当前选中的菜单
@@ -128,6 +167,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       openKeys.push('/template')
     } else if (pathname.startsWith('/report')) {
       openKeys.push('/report')
+    } else if (pathname.startsWith('/dictionary')) {
+      openKeys.push('/dictionary')
+    } else if (pathname.startsWith('/lineage')) {
+      openKeys.push('/lineage')
     }
     
     return openKeys

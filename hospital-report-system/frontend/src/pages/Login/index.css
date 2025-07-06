@@ -1,0 +1,143 @@
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-title {
+  color: #1890ff;
+  margin-bottom: 8px !important;
+  font-weight: 600;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.forgot-password {
+  color: #1890ff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-password:hover {
+  color: #40a9ff;
+}
+
+.login-button {
+  height: 44px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.quick-login {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.quick-login-title {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.quick-login .ant-btn-link {
+  padding: 0 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.quick-login .ant-btn-link:hover {
+  color: #1890ff;
+}
+
+.login-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.login-footer .ant-typography {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+  }
+  
+  .login-card {
+    max-width: 100%;
+  }
+  
+  .login-header {
+    margin-bottom: 24px;
+  }
+  
+  .login-title {
+    font-size: 24px !important;
+  }
+}
+
+/* 动画效果 */
+.login-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 输入框样式 */
+.login-form .ant-input-affix-wrapper {
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s;
+}
+
+.login-form .ant-input-affix-wrapper:focus,
+.login-form .ant-input-affix-wrapper-focused {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.login-form .ant-input-affix-wrapper .ant-input {
+  border: none;
+  box-shadow: none;
+}
+
+.login-form .ant-input-affix-wrapper .anticon {
+  color: #bfbfbf;
+}

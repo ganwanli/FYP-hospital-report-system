@@ -1,25 +1,8 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import type { User, LoginResponse } from '@/types'
-
-interface AuthState {
-  // 状态
-  isAuthenticated: boolean
-  user: User | null
-  token: string | null
-  refreshToken: string | null
-  permissions: string[]
-  
-  // 操作
-  login: (loginData: LoginResponse) => void
-  logout: () => void
-  updateUser: (user: Partial<User>) => void
-  updateToken: (token: string, refreshToken?: string) => void
-  hasPermission: (permission: string | string[]) => boolean
-  hasRole: (roleCode: string | string[]) => boolean
-  clearAuth: () => void
-}
+import type { UserInfo, LoginResponse, AuthState } from '@/types'
+import { authAPI } from '@/services/auth'
 
 export const useAuthStore = create<AuthState>()(
   devtools(
@@ -27,19 +10,21 @@ export const useAuthStore = create<AuthState>()(
       immer((set, get) => ({
         // 初始状态
         isAuthenticated: false,
-        user: null,
+        userInfo: null,
         token: null,
         refreshToken: null,
         permissions: [],
+        roles: [],
 
         // 登录
         login: (loginData: LoginResponse) => {
           set((state) => {
             state.isAuthenticated = true
-            state.user = loginData.user
+            state.userInfo = loginData.userInfo
             state.token = loginData.token
             state.refreshToken = loginData.refreshToken
-            state.permissions = loginData.user.permissions || []
+            state.permissions = loginData.userInfo.permissions || []
+            state.roles = loginData.userInfo.roles || []
             
             // 存储token到localStorage
             localStorage.setItem('token', loginData.token)
@@ -51,10 +36,11 @@ export const useAuthStore = create<AuthState>()(
         logout: () => {
           set((state) => {
             state.isAuthenticated = false
-            state.user = null
+            state.userInfo = null
             state.token = null
             state.refreshToken = null
             state.permissions = []
+            state.roles = []
             
             // 清除localStorage中的token
             localStorage.removeItem('token')
@@ -62,40 +48,29 @@ export const useAuthStore = create<AuthState>()(
           })
         },
 
-        // 更新用户信息
-        updateUser: (userData: Partial<User>) => {
+        // 设置token
+        setToken: (token: string) => {
           set((state) => {
-            if (state.user) {
-              Object.assign(state.user, userData)
-              if (userData.permissions) {
-                state.permissions = userData.permissions
-              }
-            }
+            state.token = token
+            localStorage.setItem('token', token)
           })
         },
 
-        // 更新token
-        updateToken: (token: string, refreshToken?: string) => {
+        // 设置用户信息
+        setUserInfo: (userInfo: UserInfo) => {
           set((state) => {
-            state.token = token
-            if (refreshToken) {
-              state.refreshToken = refreshToken
-            }
-            
-            // 更新localStorage中的token
-            localStorage.setItem('token', token)
-            if (refreshToken) {
-              localStorage.setItem('refreshToken', refreshToken)
-            }
+            state.userInfo = userInfo
+            state.permissions = userInfo.permissions || []
+            state.roles = userInfo.roles || []
           })
         },
 
         // 检查权限
         hasPermission: (permission: string | string[]) => {
-          const { permissions, user } = get()
+          const { permissions, roles } = get()
           
           // 超级管理员拥有所有权限
-          if (user?.roles?.some(role => role.roleCode === 'SUPER_ADMIN')) {
+          if (roles.includes('SUPER_ADMIN') || roles.includes('admin')) {
             return true
           }
           
@@ -107,43 +82,51 @@ export const useAuthStore = create<AuthState>()(
         },
 
         // 检查角色
-        hasRole: (roleCode: string | string[]) => {
-          const { user } = get()
+        hasRole: (role: string | string[]) => {
+          const { roles } = get()
           
-          if (!user?.roles) return false
-          
-          const userRoles = user.roles.map(role => role.roleCode)
-          
-          if (Array.isArray(roleCode)) {
-            return roleCode.some(code => userRoles.includes(code))
+          if (Array.isArray(role)) {
+            return role.some(r => roles.includes(r))
           }
           
-          return userRoles.includes(roleCode)
+          return roles.includes(role)
         },
 
-        // 清除认证信息
-        clearAuth: () => {
-          set((state) => {
-            state.isAuthenticated = false
-            state.user = null
-            state.token = null
-            state.refreshToken = null
-            state.permissions = []
-            
-            // 清除localStorage
-            localStorage.removeItem('token')
-            localStorage.removeItem('refreshToken')
-          })
+        // 刷新token
+        refreshUserToken: async () => {
+          const { refreshToken } = get()
+          if (!refreshToken) {
+            throw new Error('No refresh token available')
+          }
+          
+          try {
+            const response = await authAPI.refreshToken(refreshToken)
+            if (response.code === 200) {
+              set((state) => {
+                state.token = response.data.token
+                state.refreshToken = response.data.refreshToken
+                localStorage.setItem('token', response.data.token)
+                localStorage.setItem('refreshToken', response.data.refreshToken)
+              })
+            } else {
+              throw new Error(response.message || '刷新token失败')
+            }
+          } catch (error) {
+            // 刷新失败，清除认证信息
+            get().logout()
+            throw error
+          }
         },
       })),
       {
         name: 'auth-store',
         partialize: (state) => ({
           isAuthenticated: state.isAuthenticated,
-          user: state.user,
+          userInfo: state.userInfo,
           token: state.token,
           refreshToken: state.refreshToken,
           permissions: state.permissions,
+          roles: state.roles,
         }),
       }
     ),

@@ -25,7 +25,7 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
       username: root
-      password: password
+      password: ganwanli
       hikari:
         pool-name: HikariCP-Primary
         minimum-idle: 5
@@ -143,7 +143,7 @@ app:
           driver-class-name: com.mysql.cj.jdbc.Driver
           url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
           username: root
-          password: password
+          password: ganwanli
           hikari:
             pool-name: HikariCP-Master
             minimum-idle: 5
@@ -158,7 +158,7 @@ app:
           driver-class-name: com.mysql.cj.jdbc.Driver
           url: jdbc:mysql://localhost:3306/hospital_report_system_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
           username: root
-          password: password
+          password: ganwanli
           hikari:
             pool-name: HikariCP-Slave
             minimum-idle: 3

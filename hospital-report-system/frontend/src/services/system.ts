@@ -1,87 +1,182 @@
 import { http } from '@/utils/request'
-import type { User, Role, Dept, PageParams, PageResult } from '@/types'
+import type { User, Role, Permission } from '@/types'
 
-export const userApi = {
-  // 获取用户列表
-  getUsers: (params: PageParams & {
-    username?: string
-    realName?: string
-    deptId?: number
-    status?: number
-  }): Promise<PageResult<User>> => {
-    return http.get('/system/users', { params })
+// 用户相关接口
+export const userAPI = {
+  // 分页查询用户
+  getUserPage: (params: any) => {
+    return http.get('/system/user/page', { params })
   },
   
-  // 获取用户详情
-  getUser: (id: number): Promise<User> => {
-    return http.get(`/system/users/${id}`)
+  // 查询用户列表
+  getUserList: () => {
+    return http.get('/system/user/list')
+  },
+  
+  // 根据ID查询用户
+  getUserById: (id: number) => {
+    return http.get(`/system/user/${id}`)
   },
   
   // 创建用户
-  createUser: (data: Partial<User>): Promise<User> => {
-    return http.post('/system/users', data)
+  createUser: (data: any) => {
+    return http.post('/system/user', data)
   },
   
   // 更新用户
-  updateUser: (id: number, data: Partial<User>): Promise<User> => {
-    return http.put(`/system/users/${id}`, data)
+  updateUser: (id: number, data: any) => {
+    return http.put(`/system/user/${id}`, data)
   },
   
   // 删除用户
-  deleteUser: (id: number): Promise<void> => {
-    return http.delete(`/system/users/${id}`)
+  deleteUser: (id: number) => {
+    return http.delete(`/system/user/${id}`)
   },
   
-  // 重置密码
-  resetPassword: (id: number, password: string): Promise<void> => {
-    return http.post(`/system/users/${id}/reset-password`, { password })
+  // 更新用户状态
+  updateUserStatus: (id: number, status: number) => {
+    return http.put(`/system/user/${id}/status?status=${status}`)
   },
+  
+  // 重置用户密码
+  resetUserPassword: (id: number) => {
+    return http.post(`/system/user/${id}/reset-password`)
+  },
+  
+  // 解锁用户
+  unlockUser: (id: number) => {
+    return http.post(`/system/user/${id}/unlock`)
+  }
 }
 
-export const roleApi = {
-  // 获取角色列表
-  getRoles: (params?: PageParams & {
-    roleName?: string
-    roleCode?: string
-    status?: number
-  }): Promise<PageResult<Role>> => {
-    return http.get('/system/roles', { params })
+// 角色相关接口
+export const roleAPI = {
+  // 分页查询角色
+  getRolePage: (params: any) => {
+    return http.get('/system/role/page', { params })
   },
   
-  // 获取所有角色（不分页）
-  getAllRoles: (): Promise<Role[]> => {
-    return http.get('/system/roles/all')
+  // 查询角色列表
+  getRoleList: () => {
+    return http.get('/system/role/list')
   },
   
-  // 获取角色详情
-  getRole: (id: number): Promise<Role> => {
-    return http.get(`/system/roles/${id}`)
+  // 根据ID查询角色
+  getRoleById: (id: number) => {
+    return http.get(`/system/role/${id}`)
+  },
+  
+  // 查询角色权限
+  getRolePermissions: (id: number) => {
+    return http.get(`/system/role/${id}/permissions`)
+  },
+  
+  // 查询用户角色
+  getUserRoles: (userId: number) => {
+    return http.get(`/system/role/user/${userId}`)
   },
   
   // 创建角色
-  createRole: (data: Partial<Role>): Promise<Role> => {
-    return http.post('/system/roles', data)
+  createRole: (data: any) => {
+    return http.post('/system/role', data)
   },
   
   // 更新角色
-  updateRole: (id: number, data: Partial<Role>): Promise<Role> => {
-    return http.put(`/system/roles/${id}`, data)
+  updateRole: (id: number, data: any) => {
+    return http.put(`/system/role/${id}`, data)
   },
   
   // 删除角色
-  deleteRole: (id: number): Promise<void> => {
-    return http.delete(`/system/roles/${id}`)
+  deleteRole: (id: number) => {
+    return http.delete(`/system/role/${id}`)
+  },
+  
+  // 更新角色状态
+  updateRoleStatus: (id: number, status: number) => {
+    return http.put(`/system/role/${id}/status?status=${status}`)
   },
   
   // 分配权限
-  assignPermissions: (roleId: number, permissionIds: number[]): Promise<void> => {
-    return http.post(`/system/roles/${roleId}/permissions`, { permissionIds })
+  assignPermissions: (id: number, data: { permissionIds: number[] }) => {
+    return http.post(`/system/role/${id}/permissions`, data)
   },
+  
+  // 分配角色
+  assignRoles: (userId: number, data: { roleIds: number[] }) => {
+    return http.post(`/system/role/user/${userId}/roles`, data)
+  }
 }
+
+// 权限相关接口
+export const permissionAPI = {
+  // 获取权限树
+  getPermissionTree: () => {
+    return http.get('/system/permission/tree')
+  },
+  
+  // 获取子权限树
+  getPermissionTreeByParent: (parentId: number) => {
+    return http.get(`/system/permission/tree/${parentId}`)
+  },
+  
+  // 获取用户权限树
+  getUserPermissionTree: (userId: number) => {
+    return http.get(`/system/permission/user/${userId}/tree`)
+  },
+  
+  // 分页查询权限
+  getPermissionPage: (params: any) => {
+    return http.get('/system/permission/page', { params })
+  },
+  
+  // 查询权限列表
+  getPermissionList: () => {
+    return http.get('/system/permission/list')
+  },
+  
+  // 获取菜单权限
+  getMenuPermissions: () => {
+    return http.get('/system/permission/menu')
+  },
+  
+  // 获取按钮权限
+  getButtonPermissions: (parentId: number) => {
+    return http.get(`/system/permission/button/${parentId}`)
+  },
+  
+  // 根据ID查询权限
+  getPermissionById: (id: number) => {
+    return http.get(`/system/permission/${id}`)
+  },
+  
+  // 创建权限
+  createPermission: (data: any) => {
+    return http.post('/system/permission', data)
+  },
+  
+  // 更新权限
+  updatePermission: (id: number, data: any) => {
+    return http.put(`/system/permission/${id}`, data)
+  },
+  
+  // 删除权限
+  deletePermission: (id: number) => {
+    return http.delete(`/system/permission/${id}`)
+  },
+  
+  // 更新权限状态
+  updatePermissionStatus: (id: number, status: number) => {
+    return http.put(`/system/permission/${id}/status?status=${status}`)
+  }
+}
+
+// 保持向后兼容的别名
+export const userApi = userAPI
+export const roleApi = roleAPI
 
 export const deptApi = {
   // 获取部门树
-  getDeptTree: (): Promise<Dept[]> => {
+  getDeptTree: (): Promise<any[]> => {
     return http.get('/system/depts/tree')
   },
   
@@ -89,22 +184,22 @@ export const deptApi = {
   getDepts: (params?: {
     deptName?: string
     status?: number
-  }): Promise<Dept[]> => {
+  }): Promise<any[]> => {
     return http.get('/system/depts', { params })
   },
   
   // 获取部门详情
-  getDept: (id: number): Promise<Dept> => {
+  getDept: (id: number): Promise<any> => {
     return http.get(`/system/depts/${id}`)
   },
   
   // 创建部门
-  createDept: (data: Partial<Dept>): Promise<Dept> => {
+  createDept: (data: any): Promise<any> => {
     return http.post('/system/depts', data)
   },
   
   // 更新部门
-  updateDept: (id: number, data: Partial<Dept>): Promise<Dept> => {
+  updateDept: (id: number, data: any): Promise<any> => {
     return http.put(`/system/depts/${id}`, data)
   },
   
