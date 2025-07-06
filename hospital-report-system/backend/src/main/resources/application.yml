@@ -16,26 +16,25 @@ spring:
   application:
     name: hospital-report-system
   profiles:
-    active: @spring.profiles.active@
+    active: dev
   
   # 数据源配置
   datasource:
-    primary:
-      type: com.zaxxer.hikari.HikariDataSource
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
-      username: root
-      password: ganwanli
-      hikari:
-        pool-name: HikariCP-Primary
-        minimum-idle: 5
-        maximum-pool-size: 20
-        auto-commit: true
-        idle-timeout: 30000
-        max-lifetime: 900000
-        connection-timeout: 30000
-        connection-test-query: SELECT 1
-        leak-detection-threshold: 60000
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: ganwanli
+    hikari:
+      pool-name: HikariCP-Primary
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 900000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
 
   # Redis配置
   redis:
@@ -131,44 +130,6 @@ springdoc:
 
 # 应用自定义配置
 app:
-  # 多数据源配置
-  datasource:
-    dynamic:
-      enabled: true
-      primary: master
-      strict: false
-      datasource:
-        master:
-          type: com.zaxxer.hikari.HikariDataSource
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
-          username: root
-          password: ganwanli
-          hikari:
-            pool-name: HikariCP-Master
-            minimum-idle: 5
-            maximum-pool-size: 20
-            auto-commit: true
-            idle-timeout: 30000
-            max-lifetime: 900000
-            connection-timeout: 30000
-            connection-test-query: SELECT 1
-        slave:
-          type: com.zaxxer.hikari.HikariDataSource
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://localhost:3306/hospital_report_system_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
-          username: root
-          password: ganwanli
-          hikari:
-            pool-name: HikariCP-Slave
-            minimum-idle: 3
-            maximum-pool-size: 10
-            auto-commit: true
-            idle-timeout: 30000
-            max-lifetime: 900000
-            connection-timeout: 30000
-            connection-test-query: SELECT 1
-
   # 安全配置
   security:
     # 忽略认证的URL

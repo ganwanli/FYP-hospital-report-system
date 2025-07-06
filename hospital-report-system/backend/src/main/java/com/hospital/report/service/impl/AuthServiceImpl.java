@@ -44,29 +44,42 @@ public class AuthServiceImpl implements AuthService {
         validateLoginAttempts(username);
 
         try {
+            log.info("开始认证用户: {}", username);
+            
             // 执行身份验证
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
             );
+            log.info("Spring Security认证成功: {}", username);
 
             // 获取用户信息
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            log.info("获取UserDetails成功: {}", userDetails.getUsername());
+            
             User user = userService.findByUsername(username);
+            log.info("从数据库查询用户成功: {}", user != null ? user.getUsername() : "null");
 
             if (user == null) {
                 throw new BadCredentialsException("用户不存在");
             }
 
+            log.info("开始生成JWT Token");
             // 生成JWT Token
             String token = jwtTokenUtil.generateToken(userDetails);
             String refreshToken = jwtTokenUtil.generateRefreshToken(userDetails);
+            log.info("JWT Token生成成功");
 
+            log.info("开始记录登录成功信息");
             // 记录登录成功
             recordLoginSuccess(username, clientIp);
+            log.info("记录登录成功信息完成");
 
+            log.info("开始缓存Token");
             // 缓存Token
             cacheToken(token, refreshToken, user, loginRequest.getRememberMe());
+            log.info("缓存Token完成");
 
+            log.info("开始构建响应");
             // 构建响应
             LoginResponse response = new LoginResponse();
             response.setToken(token);
@@ -79,11 +92,13 @@ public class AuthServiceImpl implements AuthService {
             userInfo.setRoles(userService.findRolesByUserId(user.getId()));
             userInfo.setPermissions(userService.findPermissionsByUserId(user.getId()));
             response.setUserInfo(userInfo);
+            log.info("构建响应完成");
 
             return response;
 
         } catch (Exception e) {
             // 记录登录失败
+            log.error("Login failed for user {}: {}", username, e.getMessage(), e);
             recordLoginFailure(username);
             throw new BadCredentialsException("用户名或密码错误");
         }

@@ -45,9 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .username(user.getUsername())
                 .password(user.getPassword())
                 .authorities(authorities)
-                .accountExpired(isAccountExpired(username))
-                .accountLocked(isAccountLocked(username))
-                .credentialsExpired(isPasswordExpired(username))
+                .accountExpired(isAccountExpired(user))
+                .accountLocked(isAccountLocked(user))
+                .credentialsExpired(isPasswordExpired(user))
                 .disabled(user.getStatus() == 0)
                 .build();
     }
@@ -86,6 +86,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional
     public void incrementFailedLoginAttempts(String username) {
+        // 暂时禁用失败登录尝试计数功能，因为数据库缺少相关字段
+        log.warn("incrementFailedLoginAttempts 功能已暂时禁用");
+        /*
         User user = findByUsername(username);
         if (user != null) {
             int attempts = user.getFailedLoginAttempts() == null ? 0 : user.getFailedLoginAttempts();
@@ -102,11 +105,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             
             updateById(updateUser);
         }
+        */
     }
 
     @Override
     @Transactional
     public void resetFailedLoginAttempts(String username) {
+        // 暂时禁用失败登录尝试重置功能，因为数据库缺少相关字段
+        log.warn("resetFailedLoginAttempts 功能已暂时禁用");
+        /*
         User user = findByUsername(username);
         if (user != null && user.getFailedLoginAttempts() != null && user.getFailedLoginAttempts() > 0) {
             User updateUser = new User();
@@ -116,6 +123,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             updateUser.setLockTime(null);
             updateById(updateUser);
         }
+        */
     }
 
     @Override
@@ -147,6 +155,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public boolean isAccountLocked(String username) {
+        // 暂时禁用账户锁定检查功能，因为数据库缺少相关字段
+        return false;
+        /*
         User user = findByUsername(username);
         if (user == null || user.getIsLocked() == null || !user.getIsLocked()) {
             return false;
@@ -161,11 +172,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         
         return true;
+        */
     }
 
     @Override
     public boolean isAccountExpired(String username) {
         User user = findByUsername(username);
+        return isAccountExpired(user);
+    }
+    
+    private boolean isAccountExpired(User user) {
         if (user == null || user.getAccountExpireTime() == null) {
             return false;
         }
@@ -175,10 +191,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public boolean isPasswordExpired(String username) {
         User user = findByUsername(username);
+        return isPasswordExpired(user);
+    }
+    
+    private boolean isPasswordExpired(User user) {
         if (user == null || user.getPasswordExpireTime() == null) {
             return false;
         }
         return LocalDateTime.now().isAfter(user.getPasswordExpireTime());
+    }
+    
+    private boolean isAccountLocked(User user) {
+        // 暂时禁用账户锁定检查功能，因为数据库缺少相关字段
+        return false;
     }
 
     @Override

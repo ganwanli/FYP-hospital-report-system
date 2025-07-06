@@ -23,3 +23,12 @@ export async function testConnection(config: any) {
   // 临时实现
   return { success: true, message: '连接测试成功' };
 }
+
+// 导出 dataSourceAPI 对象
+export const dataSourceAPI = {
+  getDatasourceList,
+  createDatasource,
+  updateDatasource,
+  deleteDatasource,
+  testConnection,
+};

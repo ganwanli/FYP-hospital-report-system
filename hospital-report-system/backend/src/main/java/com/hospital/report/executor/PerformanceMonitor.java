@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PerformanceMonitor {
 
     private final Map<String, PerformanceMetrics> activeMetrics = new ConcurrentHashMap<>();
-    private final Map<String, List<PerformanceSnapshot>> historicalMetrics = new ConcurrentHashMap<>();
+    private final Map<String, List<Object>> historicalMetrics = new ConcurrentHashMap<>();
     private final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
     private final OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
     private final AtomicLong executionCounter = new AtomicLong(0);
@@ -66,9 +66,9 @@ public class PerformanceMonitor {
         historicalMetrics.computeIfAbsent("global", k -> new ArrayList<>()).add(snapshot);
         
         // Keep only last 1000 snapshots
-        List<PerformanceSnapshot> snapshots = historicalMetrics.get("global");
-        if (snapshots.size() > 1000) {
-            snapshots.remove(0);
+        List<Object> snapshotsRaw = historicalMetrics.get("global");
+        if (snapshotsRaw.size() > 1000) {
+            snapshotsRaw.remove(0);
         }
 
         log.debug("Performance monitoring completed for {}: {}ms, {}MB, {}% CPU", 
@@ -84,11 +84,11 @@ public class PerformanceMonitor {
             slowQuery.setParameters(parameters);
             slowQuery.setTimestamp(LocalDateTime.now());
             
-            List<SlowQueryInfo> slowQueries = (List<SlowQueryInfo>) historicalMetrics.computeIfAbsent("slow_queries", k -> new ArrayList<>());
-            slowQueries.add(slowQuery);
+            List<Object> slowQueriesRaw = historicalMetrics.computeIfAbsent("slow_queries", k -> new ArrayList<>());
+            slowQueriesRaw.add(slowQuery);
             
-            if (slowQueries.size() > 100) {
-                slowQueries.remove(0);
+            if (slowQueriesRaw.size() > 100) {
+                slowQueriesRaw.remove(0);
             }
             
             log.warn("Slow query detected: {}ms - {}", executionTime, sql.substring(0, Math.min(100, sql.length())));
@@ -124,25 +124,25 @@ public class PerformanceMonitor {
     public Map<String, Object> getPerformanceStatistics() {
         Map<String, Object> stats = new HashMap<>();
         
-        List<PerformanceSnapshot> snapshots = historicalMetrics.get("global");
-        if (snapshots == null || snapshots.isEmpty()) {
+        List<Object> snapshotsRaw = historicalMetrics.get("global");
+        if (snapshotsRaw == null || snapshotsRaw.isEmpty()) {
             return stats;
         }
 
         // Calculate statistics
-        long totalExecutions = snapshots.size();
-        long totalExecutionTime = snapshots.stream().mapToLong(PerformanceSnapshot::getExecutionTime).sum();
+        long totalExecutions = snapshotsRaw.size();
+        long totalExecutionTime = snapshotsRaw.stream().mapToLong(o -> ((PerformanceSnapshot) o).getExecutionTime()).sum();
         long avgExecutionTime = totalExecutionTime / totalExecutions;
-        long maxExecutionTime = snapshots.stream().mapToLong(PerformanceSnapshot::getExecutionTime).max().orElse(0);
-        long minExecutionTime = snapshots.stream().mapToLong(PerformanceSnapshot::getExecutionTime).min().orElse(0);
+        long maxExecutionTime = snapshotsRaw.stream().mapToLong(o -> ((PerformanceSnapshot) o).getExecutionTime()).max().orElse(0);
+        long minExecutionTime = snapshotsRaw.stream().mapToLong(o -> ((PerformanceSnapshot) o).getExecutionTime()).min().orElse(0);
         
-        long totalMemoryUsage = snapshots.stream().mapToLong(PerformanceSnapshot::getMemoryUsage).sum();
+        long totalMemoryUsage = snapshotsRaw.stream().mapToLong(o -> ((PerformanceSnapshot) o).getMemoryUsage()).sum();
         long avgMemoryUsage = totalMemoryUsage / totalExecutions;
-        long maxMemoryUsage = snapshots.stream().mapToLong(PerformanceSnapshot::getMemoryUsage).max().orElse(0);
+        long maxMemoryUsage = snapshotsRaw.stream().mapToLong(o -> ((PerformanceSnapshot) o).getMemoryUsage()).max().orElse(0);
         
-        double totalCpuUsage = snapshots.stream().mapToDouble(PerformanceSnapshot::getCpuUsage).sum();
+        double totalCpuUsage = snapshotsRaw.stream().mapToDouble(o -> ((PerformanceSnapshot) o).getCpuUsage()).sum();
         double avgCpuUsage = totalCpuUsage / totalExecutions;
-        double maxCpuUsage = snapshots.stream().mapToDouble(PerformanceSnapshot::getCpuUsage).max().orElse(0);
+        double maxCpuUsage = snapshotsRaw.stream().mapToDouble(o -> ((PerformanceSnapshot) o).getCpuUsage()).max().orElse(0);
         
         stats.put("totalExecutions", totalExecutions);
         stats.put("avgExecutionTime", avgExecutionTime);
@@ -157,10 +157,11 @@ public class PerformanceMonitor {
     }
 
     public List<Map<String, Object>> getSlowQueries(int limit) {
-        List<SlowQueryInfo> slowQueries = (List<SlowQueryInfo>) historicalMetrics.get("slow_queries");
-        if (slowQueries == null || slowQueries.isEmpty()) {
+        List<Object> slowQueriesRaw = historicalMetrics.get("slow_queries");
+        if (slowQueriesRaw == null || slowQueriesRaw.isEmpty()) {
             return new ArrayList<>();
         }
+        List<SlowQueryInfo> slowQueries = slowQueriesRaw.stream().map(o -> (SlowQueryInfo) o).collect(java.util.stream.Collectors.toList());
 
         return slowQueries.stream()
                 .sorted((a, b) -> Long.compare(b.getExecutionTime(), a.getExecutionTime()))
@@ -177,14 +178,13 @@ public class PerformanceMonitor {
     }
 
     public List<Map<String, Object>> getPerformanceHistory(int hours) {
-        List<PerformanceSnapshot> snapshots = historicalMetrics.get("global");
-        if (snapshots == null || snapshots.isEmpty()) {
+        List<Object> snapshotsRaw = historicalMetrics.get("global");
+        if (snapshotsRaw == null || snapshotsRaw.isEmpty()) {
             return new ArrayList<>();
         }
-
         LocalDateTime cutoff = LocalDateTime.now().minusHours(hours);
-        
-        return snapshots.stream()
+        return snapshotsRaw.stream()
+                .map(o -> (PerformanceSnapshot) o)
                 .filter(snapshot -> snapshot.getTimestamp().isAfter(cutoff))
                 .map(snapshot -> {
                     Map<String, Object> map = new HashMap<>();

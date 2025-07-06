@@ -5,7 +5,7 @@ import zhCN from 'antd/locale/zh_CN'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import App from './App'
-import '@/styles/index.css'
+import './styles/index.css'
 
 // 设置dayjs中文
 dayjs.locale('zh-cn')

@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 
 @Slf4j
 @Aspect
-@Component
+// @Component
 @Order(1)
 @RequiredArgsConstructor
 public class DataSourceAspect {

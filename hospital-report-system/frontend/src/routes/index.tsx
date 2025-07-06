@@ -1,41 +1,31 @@
 import React, { Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Spin } from 'antd'
-import { useAuthStore } from '@/stores/authStore'
-import { useAuth } from '@/hooks/useAuth'
-import BasicLayout from '@/layouts/BasicLayout'
-import AuthLayout from '@/layouts/AuthLayout'
+import { useAuthStore } from '../stores/authStore'
+import { useAuth } from '../hooks/useAuth'
+import BasicLayout from '../layouts/BasicLayout'
+import AuthLayout from '../layouts/AuthLayout'
 
 // 懒加载页面组件
-const Login = React.lazy(() => import('@/pages/Login'))
-const Dashboard = React.lazy(() => import('@/pages/dashboard/Overview'))
-const NotFound = React.lazy(() => import('@/pages/common/NotFound'))
+const Login = React.lazy(() => import('../pages/Login'))
+const Dashboard = React.lazy(() => import('../pages/dashboard/Overview'))
+const NotFound = React.lazy(() => import('../pages/common/NotFound'))
 
 // 系统管理页面
-const UserManagement = React.lazy(() => import('@/pages/system/User'))
-const RoleManagement = React.lazy(() => import('@/pages/system/Role'))
-const DeptManagement = React.lazy(() => import('@/pages/system/Dept'))
+const UserManagement = React.lazy(() => import('../pages/system/User'))
+const RoleManagement = React.lazy(() => import('../pages/system/Role'))
+const PermissionManagement = React.lazy(() => import('../pages/system/Permission'))
 
 // 数据源管理页面
-const DatasourceList = React.lazy(() => import('@/pages/datasource/List'))
-const DatasourceConfig = React.lazy(() => import('@/pages/datasource/Config'))
-
-// SQL模板管理页面
-const TemplateList = React.lazy(() => import('@/pages/template/List'))
-const TemplateEditor = React.lazy(() => import('@/pages/template/Editor'))
-
-// 报表管理页面
-const ReportConfig = React.lazy(() => import('@/pages/report/Config'))
-const ReportView = React.lazy(() => import('@/pages/report/View'))
-const ReportAnalysis = React.lazy(() => import('@/pages/report/Analysis'))
+const DatasourceList = React.lazy(() => import('../pages/datasource/List'))
 
 // 数据字典管理页面
-const DictionaryList = React.lazy(() => import('@/pages/dictionary/List'))
+const DictionaryList = React.lazy(() => import('../pages/dictionary/List'))
 
 // 数据血缘追踪页面
-const LineageManagement = React.lazy(() => import('@/pages/lineage/Management'))
-const ImpactAnalysis = React.lazy(() => import('@/pages/lineage/Impact'))
-const LineageSearch = React.lazy(() => import('@/pages/lineage/Search'))
+const LineageManagement = React.lazy(() => import('../pages/lineage/Management'))
+const ImpactAnalysis = React.lazy(() => import('../pages/lineage/Impact'))
+const LineageSearch = React.lazy(() => import('../pages/lineage/Search'))
 
 // 加载组件
 const PageLoading: React.FC = () => (
@@ -134,9 +124,9 @@ const AppRouter: React.FC = () => {
                   <RoleManagement />
                 </AuthorizedRoute>
               } />
-              <Route path="dept" element={
-                <AuthorizedRoute authority={['DEPT_MANAGE']}>
-                  <DeptManagement />
+              <Route path="permission" element={
+                <AuthorizedRoute authority={['PERMISSION_MANAGE']}>
+                  <PermissionManagement />
                 </AuthorizedRoute>
               } />
             </Route>
@@ -146,44 +136,6 @@ const AppRouter: React.FC = () => {
               <Route index element={
                 <AuthorizedRoute authority={['DATASOURCE_MANAGE']}>
                   <DatasourceList />
-                </AuthorizedRoute>
-              } />
-              <Route path="config/:id?" element={
-                <AuthorizedRoute authority={['DATASOURCE_MANAGE']}>
-                  <DatasourceConfig />
-                </AuthorizedRoute>
-              } />
-            </Route>
-            
-            {/* SQL模板管理 */}
-            <Route path="template">
-              <Route index element={
-                <AuthorizedRoute authority={['SQL_TEMPLATE_MANAGE']}>
-                  <TemplateList />
-                </AuthorizedRoute>
-              } />
-              <Route path="editor/:id?" element={
-                <AuthorizedRoute authority={['SQL_TEMPLATE_MANAGE']}>
-                  <TemplateEditor />
-                </AuthorizedRoute>
-              } />
-            </Route>
-            
-            {/* 报表管理 */}
-            <Route path="report">
-              <Route path="config" element={
-                <AuthorizedRoute authority={['REPORT_CONFIG']}>
-                  <ReportConfig />
-                </AuthorizedRoute>
-              } />
-              <Route path="view/:id?" element={
-                <AuthorizedRoute authority={['REPORT_QUERY']}>
-                  <ReportView />
-                </AuthorizedRoute>
-              } />
-              <Route path="analysis" element={
-                <AuthorizedRoute authority={['REPORT_ANALYSIS']}>
-                  <ReportAnalysis />
                 </AuthorizedRoute>
               } />
             </Route>

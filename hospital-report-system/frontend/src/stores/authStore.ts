@@ -92,6 +92,36 @@ export const useAuthStore = create<AuthState>()(
           return roles.includes(role)
         },
 
+        // 清除认证信息
+        clearAuth: () => {
+          set((state) => {
+            state.isAuthenticated = false
+            state.userInfo = null
+            state.token = null
+            state.refreshToken = null
+            state.permissions = []
+            state.roles = []
+            
+            // 清除localStorage中的token
+            localStorage.removeItem('token')
+            localStorage.removeItem('refreshToken')
+          })
+        },
+
+        // 更新token
+        updateToken: (token: string, refreshToken?: string) => {
+          set((state) => {
+            state.token = token
+            if (refreshToken) {
+              state.refreshToken = refreshToken
+            }
+            localStorage.setItem('token', token)
+            if (refreshToken) {
+              localStorage.setItem('refreshToken', refreshToken)
+            }
+          })
+        },
+
         // 刷新token
         refreshUserToken: async () => {
           const { refreshToken } = get()

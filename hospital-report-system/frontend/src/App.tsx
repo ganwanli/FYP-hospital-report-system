@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { ConfigProvider, theme } from 'antd'
-import { useAppStore } from '@/stores/appStore'
-import AppRouter from '@/routes'
-import GlobalLoading from '@/components/common/Loading/GlobalLoading'
+import { useAppStore } from './stores/appStore'
+import AppRouter from './routes'
+import GlobalLoading from './components/common/Loading/GlobalLoading'
 
 const App: React.FC = () => {
   const { loading, theme: appTheme } = useAppStore()

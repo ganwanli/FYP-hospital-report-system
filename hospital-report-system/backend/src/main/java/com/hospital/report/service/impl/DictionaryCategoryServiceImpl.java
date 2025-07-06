@@ -3,6 +3,7 @@ package com.hospital.report.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hospital.report.entity.DictionaryCategory;
+import com.hospital.report.entity.DataDictionary;
 import com.hospital.report.mapper.DictionaryCategoryMapper;
 import com.hospital.report.mapper.DataDictionaryMapper;
 import com.hospital.report.service.DictionaryCategoryService;
@@ -65,7 +66,7 @@ public class DictionaryCategoryServiceImpl extends ServiceImpl<DictionaryCategor
         
         // 检查是否有字段使用该分类
         long fieldCount = dataDictionaryMapper.selectCount(
-            new QueryWrapper<>().eq("category_id", categoryId).eq("is_deleted", false)
+            new QueryWrapper<DataDictionary>().eq("category_id", categoryId).eq("is_deleted", false)
         );
         if (fieldCount > 0) {
             throw new RuntimeException("该分类下还有字段，无法删除");

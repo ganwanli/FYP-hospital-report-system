@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -44,8 +45,18 @@ public class SecurityConfig {
     /**
      * 忽略认证的URL配置
      */
-    @Value("#{'${app.security.ignore-urls}'.split(',')}")
-    private List<String> ignoreUrls;
+    private List<String> ignoreUrls = Arrays.asList(
+        "/api/auth/login",
+        "/api/auth/logout", 
+        "/api/auth/refresh",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/swagger-ui.html",
+        "/swagger-resources/**",
+        "/webjars/**",
+        "/actuator/**",
+        "/druid/**"
+    );
 
     /**
      * 密码编码器

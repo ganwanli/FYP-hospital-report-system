@@ -241,22 +241,18 @@ public class CacheServiceImpl implements CacheService {
     // 清理过期项
     private void cleanupExpiredItems() {
         try {
-            int removed = 0;
-            
+            java.util.concurrent.atomic.AtomicInteger removed = new java.util.concurrent.atomic.AtomicInteger(0);
             cache.entrySet().removeIf(entry -> {
                 boolean expired = entry.getValue().isExpired();
                 if (expired) {
-                    removed++;
+                    removed.incrementAndGet();
                 }
                 return expired;
             });
-            
-            if (removed > 0) {
-                log.debug("清理过期缓存项: {} 个", removed);
+            if (removed.get() > 0) {
+                log.debug("清理过期缓存项: {} 个", removed.get());
             }
-            
             log.debug("当前缓存项数量: {}", cache.size());
-            
         } catch (Exception e) {
             log.error("清理过期缓存失败", e);
         }

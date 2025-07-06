@@ -17,7 +17,7 @@ import java.util.Map;
  * @author Hospital Report System
  * @since 2024-01-01
  */
-@Configuration
+// @Configuration
 public class DataSourceConfig {
 
     /**

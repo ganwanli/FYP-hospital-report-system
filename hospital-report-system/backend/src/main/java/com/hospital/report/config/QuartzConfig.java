@@ -24,14 +24,7 @@ public class QuartzConfig {
         quartzProperties.put("org.quartz.scheduler.instanceId", "AUTO");
         quartzProperties.put("org.quartz.scheduler.skipUpdateCheck", "true");
         
-        quartzProperties.put("org.quartz.jobStore.class", "org.quartz.impl.jdbcjobstore.JobStoreTX");
-        quartzProperties.put("org.quartz.jobStore.driverDelegateClass", "org.quartz.impl.jdbcjobstore.StdJDBCDelegate");
-        quartzProperties.put("org.quartz.jobStore.tablePrefix", "QRTZ_");
-        quartzProperties.put("org.quartz.jobStore.isClustered", "true");
-        quartzProperties.put("org.quartz.jobStore.clusterCheckinInterval", "20000");
-        quartzProperties.put("org.quartz.jobStore.maxMisfiresToHandleAtATime", "1");
-        quartzProperties.put("org.quartz.jobStore.misfireThreshold", "120000");
-        quartzProperties.put("org.quartz.jobStore.selectWithLockSQL", "SELECT * FROM {0}LOCKS WHERE SCHED_NAME = {1} AND LOCK_NAME = ? FOR UPDATE");
+        quartzProperties.put("org.quartz.jobStore.class", "org.quartz.simpl.RAMJobStore");
         
         quartzProperties.put("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
         quartzProperties.put("org.quartz.threadPool.threadCount", "10");

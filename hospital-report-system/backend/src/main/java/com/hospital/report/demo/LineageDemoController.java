@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/lineage")
+@RequestMapping("/api/lineage/demo")
 @CrossOrigin(origins = "*")
 public class LineageDemoController {
 

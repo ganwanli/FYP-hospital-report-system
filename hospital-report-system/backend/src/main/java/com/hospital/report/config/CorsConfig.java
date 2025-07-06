@@ -1,6 +1,5 @@
 package com.hospital.report.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -21,20 +20,24 @@ import java.util.List;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Value("#{'${app.security.cors.allowed-origins}'.split(',')}")
-    private List<String> allowedOrigins;
+    private List<String> allowedOrigins = Arrays.asList(
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081"
+    );
 
-    @Value("#{'${app.security.cors.allowed-methods}'.split(',')}")
-    private List<String> allowedMethods;
+    private List<String> allowedMethods = Arrays.asList(
+        "GET", "POST", "PUT", "DELETE", "OPTIONS"
+    );
 
-    @Value("${app.security.cors.allowed-headers}")
-    private String allowedHeaders;
+    private String allowedHeaders = "*";
 
-    @Value("${app.security.cors.allow-credentials}")
-    private boolean allowCredentials;
+    private boolean allowCredentials = true;
 
-    @Value("${app.security.cors.max-age}")
-    private long maxAge;
+    private long maxAge = 3600;
 
     /**
      * 跨域配置

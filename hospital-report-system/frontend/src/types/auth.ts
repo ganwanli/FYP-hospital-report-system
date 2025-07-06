@@ -100,5 +100,7 @@ export interface AuthState {
   setUserInfo: (userInfo: UserInfo) => void
   hasPermission: (permission: string | string[]) => boolean
   hasRole: (role: string | string[]) => boolean
+  clearAuth: () => void
+  updateToken: (token: string, refreshToken?: string) => void
   refreshUserToken: () => Promise<void>
 }

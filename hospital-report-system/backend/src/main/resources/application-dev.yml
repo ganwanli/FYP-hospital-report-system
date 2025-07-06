@@ -2,14 +2,21 @@
 spring:
   # 数据源配置
   datasource:
-    primary:
-      url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
-      username: root
-      password: 123456
-      hikari:
-        pool-name: HikariCP-Primary-Dev
-        minimum-idle: 5
-        maximum-pool-size: 20
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: ganwanli
+    hikari:
+      pool-name: HikariCP-Dev
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 900000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
 
   # Redis配置
   redis:
@@ -50,22 +57,20 @@ springdoc:
 
 # 应用自定义配置
 app:
-  # 多数据源配置
-  datasource:
-    dynamic:
-      enabled: true
-      datasource:
-        master:
-          url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
-          username: root
-          password: 123456
-        slave:
-          url: jdbc:mysql://localhost:3306/hospital_report_system?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false
-          username: root
-          password: 123456
-
   # 安全配置
   security:
+    # 忽略认证的URL
+    ignore-urls:
+      - /api/auth/login
+      - /api/auth/logout
+      - /api/auth/refresh
+      - /swagger-ui/**
+      - /v3/api-docs/**
+      - /swagger-ui.html
+      - /swagger-resources/**
+      - /webjars/**
+      - /actuator/**
+      - /druid/**
     cors:
       allowed-origins: 
         - http://localhost:3000

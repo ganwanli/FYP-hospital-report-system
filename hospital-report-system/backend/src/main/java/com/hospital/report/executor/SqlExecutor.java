@@ -68,7 +68,7 @@ public class SqlExecutor {
                 return cachedResult;
             }
 
-            SecurityCheckResult securityResult = securityChecker.checkSql(sqlContent, parameters);
+            SecurityChecker.SecurityCheckResult securityResult = securityChecker.checkSql(sqlContent, parameters);
             if (!securityResult.isValid()) {
                 executionLog.setExecutionStatus("SECURITY_VIOLATION");
                 executionLog.setErrorMessage(securityResult.getErrorMessage());
@@ -83,7 +83,7 @@ public class SqlExecutor {
                 throw new RuntimeException("DataSource not found for database type: " + databaseType);
             }
 
-            PerformanceMetrics metrics = performanceMonitor.startMonitoring();
+            PerformanceMonitor.PerformanceMetrics metrics = performanceMonitor.startMonitoring();
             
             try (Connection connection = dataSource.getConnection()) {
                 connection.setAutoCommit(false);
@@ -213,7 +213,7 @@ public class SqlExecutor {
         return status;
     }
 
-    private ExecutionResult executeWithConnection(Connection connection, String sql, Map<String, Object> parameters, PerformanceMetrics metrics) throws SQLException {
+    private ExecutionResult executeWithConnection(Connection connection, String sql, Map<String, Object> parameters, PerformanceMonitor.PerformanceMetrics metrics) throws SQLException {
         ExecutionResult result = new ExecutionResult();
         result.setSuccess(true);
         result.setSql(sql);
@@ -230,7 +230,7 @@ public class SqlExecutor {
         }
     }
 
-    private ExecutionResult executeSelectQuery(Connection connection, String sql, ExecutionResult result, PerformanceMetrics metrics) throws SQLException {
+    private ExecutionResult executeSelectQuery(Connection connection, String sql, ExecutionResult result, PerformanceMonitor.PerformanceMetrics metrics) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             try (ResultSet resultSet = statement.executeQuery()) {
                 List<Map<String, Object>> rows = resultConverter.convertResultSet(resultSet);
@@ -251,7 +251,7 @@ public class SqlExecutor {
         }
     }
 
-    private ExecutionResult executeUpdateQuery(Connection connection, String sql, ExecutionResult result, PerformanceMetrics metrics) throws SQLException {
+    private ExecutionResult executeUpdateQuery(Connection connection, String sql, ExecutionResult result, PerformanceMonitor.PerformanceMetrics metrics) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             int affectedRows = statement.executeUpdate();
             

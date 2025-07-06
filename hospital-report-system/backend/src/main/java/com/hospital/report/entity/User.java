@@ -39,19 +39,19 @@ public class User extends Model<User> {
     @TableField("avatar")
     private String avatar;
 
-    @TableField("gender")
+    @TableField(value = "gender", exist = false)
     private Integer gender;
 
-    @TableField("birth_date")
+    @TableField(value = "birth_date", exist = false)
     private LocalDateTime birthDate;
 
-    @TableField("department_id")
+    @TableField("dept_id")
     private Long departmentId;
 
-    @TableField("position")
+    @TableField(value = "position", exist = false)
     private String position;
 
-    @TableField("employee_id")
+    @TableField(value = "employee_id", exist = false)
     private String employeeId;
 
     @TableField("status")
@@ -66,25 +66,25 @@ public class User extends Model<User> {
     @TableField("login_count")
     private Integer loginCount;
 
-    @TableField("password_update_time")
+    @TableField(value = "password_update_time", exist = false)
     private LocalDateTime passwordUpdateTime;
 
-    @TableField("account_expire_time")
+    @TableField(value = "account_expire_time", exist = false)
     private LocalDateTime accountExpireTime;
 
-    @TableField("password_expire_time")
+    @TableField(value = "password_expire_time", exist = false)
     private LocalDateTime passwordExpireTime;
 
-    @TableField("is_locked")
+    @TableField(value = "is_locked", exist = false)
     private Boolean isLocked;
 
-    @TableField("lock_time")
+    @TableField(value = "lock_time", exist = false)
     private LocalDateTime lockTime;
 
-    @TableField("failed_login_attempts")
+    @TableField(value = "failed_login_attempts", exist = false)
     private Integer failedLoginAttempts;
 
-    @TableField("remarks")
+    @TableField(value = "remarks", exist = false)
     private String remarks;
 
     @TableField("created_by")
@@ -99,7 +99,7 @@ public class User extends Model<User> {
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
 
-    @TableField("is_deleted")
+    @TableField("deleted")
     @TableLogic
     private Boolean isDeleted;
 

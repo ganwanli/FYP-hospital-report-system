@@ -121,7 +121,7 @@ public class CacheManager {
             redisTemplate.delete(CACHE_INDEX_KEY);
             
             // Clear cache stats
-            Set<String> statsKeys = redisTemplate.keys(CACHE_STATS_PREFIX + "*");
+            Set<String> statsKeys = (Set<String>) (Set<?>) redisTemplate.keys(CACHE_STATS_PREFIX + "*");
             if (statsKeys != null && !statsKeys.isEmpty()) {
                 redisTemplate.delete(statsKeys);
             }
@@ -143,7 +143,7 @@ public class CacheManager {
             stats.put("maxCacheSize", MAX_CACHE_SIZE);
             
             // Calculate hit/miss statistics
-            Set<String> cacheKeys = redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
+            Set<String> cacheKeys = (Set<String>) (Set<?>) redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
             long totalHits = 0;
             long totalMisses = 0;
             long totalRequests = 0;
@@ -181,7 +181,7 @@ public class CacheManager {
         List<Map<String, Object>> entries = new ArrayList<>();
         
         try {
-            Set<String> cacheKeys = redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
+            Set<String> cacheKeys = (Set<String>) (Set<?>) redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
             if (cacheKeys != null) {
                 int count = 0;
                 for (String cacheKey : cacheKeys) {
@@ -222,7 +222,7 @@ public class CacheManager {
     public void optimizeCache() {
         try {
             // Remove expired entries from index
-            Set<String> cacheKeys = redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
+            Set<String> cacheKeys = (Set<String>) (Set<?>) redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
             if (cacheKeys != null) {
                 List<String> expiredKeys = new ArrayList<>();
                 for (String cacheKey : cacheKeys) {
@@ -238,7 +238,7 @@ public class CacheManager {
             }
             
             // Remove cache stats for non-existent keys
-            Set<String> statsKeys = redisTemplate.keys(CACHE_STATS_PREFIX + "*");
+            Set<String> statsKeys = (Set<String>) (Set<?>) redisTemplate.keys(CACHE_STATS_PREFIX + "*");
             if (statsKeys != null) {
                 List<String> orphanedStatsKeys = new ArrayList<>();
                 for (String statsKey : statsKeys) {
@@ -319,7 +319,7 @@ public class CacheManager {
         try {
             // This is a simplified eviction strategy
             // In a real implementation, you might want to use LRU or other algorithms
-            Set<String> cacheKeys = redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
+            Set<String> cacheKeys = (Set<String>) (Set<?>) redisTemplate.opsForSet().members(CACHE_INDEX_KEY);
             if (cacheKeys != null && cacheKeys.size() > count) {
                 List<String> keysList = new ArrayList<>(cacheKeys);
                 List<String> keysToEvict = keysList.subList(0, count);

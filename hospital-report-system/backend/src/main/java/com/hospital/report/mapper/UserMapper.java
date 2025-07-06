@@ -15,7 +15,7 @@ public interface UserMapper extends BaseMapper<User> {
             "FROM sys_user u " +
             "LEFT JOIN sys_user_role ur ON u.id = ur.user_id " +
             "LEFT JOIN sys_role r ON ur.role_id = r.id " +
-            "WHERE u.username = #{username} AND u.is_deleted = 0")
+            "WHERE u.username = #{username} AND u.deleted = 0")
     User findByUsername(@Param("username") String username);
 
     @Select("SELECT p.permission_code " +
@@ -24,13 +24,13 @@ public interface UserMapper extends BaseMapper<User> {
             "LEFT JOIN sys_role r ON ur.role_id = r.id " +
             "LEFT JOIN sys_role_permission rp ON r.id = rp.role_id " +
             "LEFT JOIN sys_permission p ON rp.permission_id = p.id " +
-            "WHERE u.id = #{userId} AND u.is_deleted = 0 AND r.is_deleted = 0 AND p.is_deleted = 0")
+            "WHERE u.id = #{userId} AND u.deleted = 0 AND r.deleted = 0 AND p.deleted = 0")
     List<String> findPermissionsByUserId(@Param("userId") Long userId);
 
     @Select("SELECT r.* " +
             "FROM sys_user u " +
             "LEFT JOIN sys_user_role ur ON u.id = ur.user_id " +
             "LEFT JOIN sys_role r ON ur.role_id = r.id " +
-            "WHERE u.id = #{userId} AND u.is_deleted = 0 AND r.is_deleted = 0")
+            "WHERE u.id = #{userId} AND u.deleted = 0 AND r.deleted = 0")
     List<String> findRolesByUserId(@Param("userId") Long userId);
 }
