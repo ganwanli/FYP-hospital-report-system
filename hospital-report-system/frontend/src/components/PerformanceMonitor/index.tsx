@@ -465,7 +465,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ userId }) => {
               title={
                 <Space>
                   <WarningOutlined style={{ color: '#fa8c16' }} />
-                  <Text strong>Slow Queries (>{'>'}1s)</Text>
+                  <Text strong>Slow Queries (&gt;1s)</Text>
                   <Tag color="orange">{slowQueries.length}</Tag>
                 </Space>
               }

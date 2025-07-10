@@ -1,14 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { ConfigProvider, App as AntdApp } from 'antd'
+import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
 import App from './App'
-import './styles/index.css'
 
-// 设置dayjs中文
-dayjs.locale('zh-cn')
+console.log('🚀 开始启动 React 应用')
 
 // Ant Design 全局配置
 const antdConfig = {
@@ -17,19 +13,18 @@ const antdConfig = {
     token: {
       colorPrimary: '#1890ff',
       borderRadius: 6,
-      colorBgBase: '#ffffff',
     },
-    algorithm: undefined, // 可以设置为 theme.darkAlgorithm
   },
-  componentSize: 'middle' as const,
 }
+
+console.log('📦 配置完成，开始渲染')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ConfigProvider {...antdConfig}>
-      <AntdApp>
-        <App />
-      </AntdApp>
+      <App />
     </ConfigProvider>
   </React.StrictMode>
 )
+
+console.log('✅ React 应用渲染完成')

@@ -26,6 +26,7 @@ DB_USER="root"
 DEFAULT_DB_PASSWORD="ganwanli"
 BACKEND_PORT=8080
 FRONTEND_PORT=5173
+HEALTHINSIGHT_PORT=3000
 
 echo -e "${CYAN}"
 echo "██╗  ██╗ ██████╗ ███████╗██████╗ ██╗████████╗ █████╗ ██╗     "

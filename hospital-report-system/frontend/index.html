@@ -2,198 +2,160 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>医院报表管理系统</title>
+    <title>医院报告管理系统</title>
+    <meta name="description" content="Hospital Report Management System - 现代化医院报告管理系统" />
     <style>
-      body {
+      /* 全局重置样式 */
+      * {
         margin: 0;
-        padding: 50px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: #f0f2f5;
+      }
+      
+      #root {
+        width: 100%;
+        height: 100vh;
+      }
+      
+      /* 加载动画 */
+      .loading-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      
+      .loading-logo {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-bottom: 24px;
+        animation: pulse 2s ease-in-out infinite;
       }
-      .container {
-        background: white;
-        border-radius: 20px;
-        padding: 60px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        text-align: center;
-        max-width: 600px;
-      }
-      h1 {
-        color: #1890ff;
-        margin-bottom: 30px;
-        font-size: 2.5em;
-      }
-      .status {
-        color: #52c41a;
-        font-size: 1.2em;
-        margin: 20px 0;
-      }
-      .login-form {
-        margin-top: 40px;
-        padding: 30px;
-        background: #f5f5f5;
-        border-radius: 10px;
-      }
-      input {
-        width: 200px;
-        padding: 12px;
-        margin: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 16px;
-      }
-      button {
-        background: #1890ff;
+      
+      .loading-text {
         color: white;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-        margin: 10px;
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       }
-      button:hover {
-        background: #40a9ff;
+      
+      .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
       }
-      .quick-login {
-        margin-top: 20px;
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
       }
-      .quick-login button {
-        background: #52c41a;
-        padding: 8px 16px;
-        font-size: 14px;
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>🏥 医院报表管理系统</h1>
-      <div class="status">✅ 系统运行正常</div>
-      <p>Hospital Report Management System</p>
-      <p>时间: <span id="time"></span></p>
-      
-      <div class="login-form">
-        <h3>系统登录</h3>
-        <div>
-          <input type="text" id="username" placeholder="用户名" value="admin">
-          <input type="password" id="password" placeholder="密码" value="123456">
-        </div>
-        <button onclick="login()">登录系统</button>
-        
-        <div class="quick-login">
-          <p>快速登录:</p>
-          <button onclick="quickLogin('admin', '123456')">管理员</button>
-          <button onclick="quickLogin('sysadmin', '123456')">系统管理员</button>
-          <button onclick="quickLogin('dataadmin', '123456')">数据管理员</button>
-        </div>
+    <!-- 加载动画 -->
+    <div class="loading-container" id="loading">
+      <div class="loading-logo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+          <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
+        </svg>
       </div>
-      
-      <div style="margin-top: 30px; color: #666; font-size: 14px;">
-        <p>✅ 前端服务: localhost:3000</p>
-        <p>✅ 后端服务: localhost:8080</p>
-        <p>✅ 数据库: MySQL 已连接</p>
-        <p>✅ 缓存: Redis 已连接</p>
-      </div>
+      <div class="loading-text">医院报告管理系统</div>
+      <div class="loading-spinner"></div>
     </div>
 
+    <!-- React 应用容器 -->
+    <div id="root"></div>
+    
+    <!-- React 应用入口 -->
+    <script type="module" src="/src/main.tsx?t=1704715200"></script>
+    
     <script>
-      function updateTime() {
-        document.getElementById('time').textContent = new Date().toLocaleString();
-      }
-      
-      function quickLogin(username, password) {
-        document.getElementById('username').value = username;
-        document.getElementById('password').value = password;
-      }
-      
-      function login() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        if (!username || !password) {
-          alert('请输入用户名和密码');
-          return;
+      console.log('🏥 医院报告管理系统启动中...');
+      console.log('📱 前端服务: http://localhost:3000');
+      console.log('🔗 登录页面: http://localhost:3000/login');
+
+      // 立即隐藏加载动画，让 React 应用显示
+      setTimeout(function() {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          console.log('🔄 隐藏加载动画');
+          loading.style.display = 'none';
         }
-        
-        // 模拟登录
-        const loginData = {
-          username: username,
-          password: password
-        };
-        
-        fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(loginData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.code === 200) {
-            alert('登录成功！欢迎使用医院报表管理系统');
-            // 这里可以跳转到实际的React应用
-            window.location.href = '/dashboard.html';
-          } else {
-            alert('登录失败: ' + (data.message || '用户名或密码错误'));
-          }
-        })
-        .catch(error => {
-          console.error('登录请求失败:', error);
-          
-          // 演示模式：根据用户名显示不同的登录成功信息
-          let userType = '';
-          let permissions = [];
-          
-          switch(username) {
-            case 'admin':
-              userType = '超级管理员';
-              permissions = ['系统管理', '用户管理', '数据源管理', '报表管理', '权限管理'];
-              break;
-            case 'sysadmin':
-              userType = '系统管理员';
-              permissions = ['用户管理', '角色管理', '权限管理'];
-              break;
-            case 'dataadmin':
-              userType = '数据管理员';
-              permissions = ['数据源管理', 'SQL模板管理'];
-              break;
-            case 'reportadmin':
-              userType = '报表管理员';
-              permissions = ['报表配置', '报表分析'];
-              break;
-            case 'analyst':
-              userType = '报表分析师';
-              permissions = ['报表查询', '报表导出'];
-              break;
-            default:
-              userType = '普通用户';
-              permissions = ['报表查看'];
-          }
-          
-          const permissionList = permissions.map(p => `• ${p}`).join('\\n');
-          
-          // 跳转到仪表板
-          setTimeout(() => {
-            window.location.href = `/dashboard.html?user=${encodeURIComponent(username + ' (' + userType + ')')}`;
-          }, 2000);
-          
-          alert(`🎉 登录成功！（演示模式）\\n\\n欢迎 ${username} (${userType})\\n\\n您的权限包括：\\n${permissionList}\\n\\n✅ 系统功能：\\n• 数据源管理\\n• 报表配置管理\\n• 用户权限管理\\n• 数据血缘追踪\\n• SQL模板管理\\n• 系统监控\\n\\n即将跳转到系统仪表板...`);
-        });
-      }
-      
-      // 更新时间
-      updateTime();
-      setInterval(updateTime, 1000);
-      
-      console.log('医院报表管理系统启动成功！');
-      console.log('前端: http://localhost:3000');
-      console.log('后端: http://localhost:8080');
+      }, 100);
+
+      // 检查 React 应用是否正确加载
+      setTimeout(function() {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+          console.error('❌ React 应用未正确加载');
+          // 显示错误信息
+          root.innerHTML = `
+            <div style="
+              width: 100vw;
+              height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: #f5f5f5;
+              font-family: monospace;
+            ">
+              <div style="
+                background: #fff2f0;
+                border: 1px solid #ffccc7;
+                border-radius: 8px;
+                padding: 20px;
+                max-width: 600px;
+                color: #ff4d4f;
+                text-align: center;
+              ">
+                <h2>❌ React 应用加载失败</h2>
+                <p>请检查浏览器控制台获取详细错误信息。</p>
+                <button onclick="window.location.reload()" style="
+                  background: #1890ff;
+                  color: white;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                  margin-top: 10px;
+                ">重新加载</button>
+              </div>
+            </div>
+          `;
+        } else {
+          console.log('✅ React 应用容器有内容');
+        }
+      }, 2000);
     </script>
   </body>
 </html>
