@@ -53,8 +53,20 @@ public class AuthServiceImpl implements AuthService {
             log.info("Spring Security认证成功: {}", username);
 
             // 获取用户信息
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            log.info("获取UserDetails成功: {}", userDetails.getUsername());
+            Object principal = authentication.getPrincipal();
+            UserDetails userDetails = null;
+            String authenticatedUsername = null;
+
+            if (principal instanceof UserDetails) {
+                userDetails = (UserDetails) principal;
+                authenticatedUsername = userDetails.getUsername();
+            } else if (principal instanceof String) {
+                authenticatedUsername = (String) principal;
+            } else {
+                authenticatedUsername = principal.toString();
+            }
+
+            log.info("获取认证信息成功: {}", authenticatedUsername);
             
             User user = userService.findByUsername(username);
             log.info("从数据库查询用户成功: {}", user != null ? user.getUsername() : "null");
@@ -155,19 +167,62 @@ public class AuthServiceImpl implements AuthService {
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            return userService.findByUsername(userDetails.getUsername());
+            Object principal = authentication.getPrincipal();
+            String username = null;
+
+            // 处理不同类型的Principal
+            if (principal instanceof UserDetails) {
+                // 如果是UserDetails类型
+                username = ((UserDetails) principal).getUsername();
+            } else if (principal instanceof String) {
+                // 如果是String类型（用户名）
+                username = (String) principal;
+            } else {
+                // 其他情况，尝试调用toString方法
+                username = principal.toString();
+            }
+
+            if (username != null && !username.equals("anonymousUser")) {
+                return userService.findByUsername(username);
+            }
         }
         return null;
     }
 
     @Override
     public boolean hasPermission(String permission) {
-        User user = getCurrentUser();
-        if (user == null) return false;
-        
-        List<String> permissions = userService.findPermissionsByUserId(user.getId());
-        return permissions.contains(permission);
+        try {
+            // 检查权限参数
+            if (permission == null || permission.trim().isEmpty()) {
+                log.warn("权限参数为空");
+                return false;
+            }
+
+            // 获取当前用户
+            User user = getCurrentUser();
+            if (user == null) {
+                log.debug("当前用户为空，权限检查失败");
+                return false;
+            }
+
+            // 获取用户权限列表
+            List<String> permissions = userService.findPermissionsByUserId(user.getId());
+            if (permissions == null) {
+                log.warn("用户 {} 的权限列表为空", user.getUsername());
+                return false;
+            }
+
+            // 检查是否包含指定权限
+            boolean hasPermission = permissions.contains(permission);
+
+            log.debug("用户 {} 权限检查: {} = {}", user.getUsername(), permission, hasPermission);
+
+            return hasPermission;
+
+        } catch (Exception e) {
+            log.error("检查权限时发生异常: permission={}", permission, e);
+            return false;
+        }
     }
 
     @Override
@@ -212,5 +267,14 @@ public class AuthServiceImpl implements AuthService {
         redisUtil.set(TOKEN_PREFIX + token, user.getUsername(), expiration);
         redisUtil.set(REFRESH_TOKEN_PREFIX + refreshToken, user.getUsername(), REFRESH_TOKEN_EXPIRE);
         redisUtil.set(USER_TOKEN_PREFIX + user.getUsername(), token, expiration);
+    }
+
+    @Override
+    public Authentication authenticate(String username, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(username, password)
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return authentication;
     }
 }

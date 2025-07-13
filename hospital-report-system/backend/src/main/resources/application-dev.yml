@@ -71,6 +71,7 @@ app:
       - /webjars/**
       - /actuator/**
       - /druid/**
+      - /api/system/**
     cors:
       allowed-origins: 
         - http://localhost:3000

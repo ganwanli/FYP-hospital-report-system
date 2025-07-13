@@ -82,18 +82,38 @@ public class DynamicDataSourceManager {
     
     private HikariConfig buildHikariConfig(DataSourceConfig config) {
         HikariConfig hikariConfig = new HikariConfig();
-        
-        hikariConfig.setDriverClassName(config.getDriverClassName());
-        hikariConfig.setJdbcUrl(config.getJdbcUrl());
-        hikariConfig.setUsername(config.getUsername());
+
+        // 添加空值检查和日志
+        String driverClassName = config.getDriverClassName();
+        String jdbcUrl = config.getJdbcUrl();
+        String username = config.getUsername();
+
+        log.debug("Building HikariConfig with:");
+        log.debug("  driverClassName: {}", driverClassName);
+        log.debug("  jdbcUrl: {}", jdbcUrl);
+        log.debug("  username: {}", username);
+
+        if (driverClassName == null || driverClassName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Driver class name cannot be null or empty");
+        }
+        if (jdbcUrl == null || jdbcUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("JDBC URL cannot be null or empty");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be null or empty");
+        }
+
+        hikariConfig.setDriverClassName(driverClassName);
+        hikariConfig.setJdbcUrl(jdbcUrl);
+        hikariConfig.setUsername(username);
         
         // 解密密码
         String password = config.getPassword();
-        try {
-            password = aesUtil.decrypt(password);
-        } catch (Exception e) {
-            log.warn("密码解密失败，使用原始密码", e);
-        }
+//        try {
+//            password = aesUtil.decrypt(password);
+//        } catch (Exception e) {
+//            log.warn("密码解密失败，使用原始密码", e);
+//        }
         hikariConfig.setPassword(password);
         
         // 连接池配置

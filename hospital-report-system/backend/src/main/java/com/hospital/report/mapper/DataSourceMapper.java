@@ -10,12 +10,12 @@ import java.util.List;
 @Mapper
 public interface DataSourceMapper extends BaseMapper<DataSource> {
 
-    @Select("SELECT * FROM sys_datasource WHERE status = 1 AND is_deleted = 0 ORDER BY created_time DESC")
+    @Select("SELECT id,datasource_name,datasource_code,datasource_type AS databaseType,driver_class AS driverClassName,connection_url AS jdbcUrl,host,port,database_name,username,password,min_pool_size AS initialSize,max_pool_size AS maxActive,test_query AS validationQuery,connection_timeout,status,description,created_by,created_time,updated_by,updated_time,deleted AS isDeleted FROM sys_datasource WHERE status = 1 AND deleted = 0 ORDER BY created_time DESC")
     List<DataSource> findActiveDataSources();
 
-    @Select("SELECT * FROM sys_datasource WHERE is_default = 1 AND is_deleted = 0 LIMIT 1")
+    @Select("SELECT id,datasource_name,datasource_code,datasource_type AS databaseType,driver_class AS driverClassName,connection_url AS jdbcUrl,host,port,database_name,username,password,min_pool_size AS initialSize,max_pool_size AS maxActive,test_query AS validationQuery,connection_timeout,status,description,created_by,created_time,updated_by,updated_time,deleted AS isDeleted FROM sys_datasource WHERE deleted = 0 LIMIT 1")
     DataSource findDefaultDataSource();
 
-    @Select("SELECT * FROM sys_datasource WHERE datasource_code = #{code} AND is_deleted = 0")
+    @Select("SELECT id,datasource_name,datasource_code,datasource_type AS databaseType,driver_class AS driverClassName,connection_url AS jdbcUrl,host,port,database_name,username,password,min_pool_size AS initialSize,max_pool_size AS maxActive,test_query AS validationQuery,connection_timeout,status,description,created_by,created_time,updated_by,updated_time,deleted AS isDeleted FROM sys_datasource WHERE datasource_code = #{code} AND deleted = 0")
     DataSource findByCode(String code);
 }

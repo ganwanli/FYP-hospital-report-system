@@ -149,24 +149,35 @@ public class JwtTokenUtil {
      * 验证token是否有效
      */
     public Boolean validateToken(String token) {
+            // 使用JWT进行身份验证，检查token的有效性
         try {
+            // 构建JWT解析器，并设置签名密钥
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
+                    // 解析并验证JWT token
                     .parseClaimsJws(token);
+            // 如果token有效，返回true
             return true;
         } catch (SecurityException e) {
+            // 捕获安全性异常，表明JWT签名无效
             logger.error("Invalid JWT signature: {}", e.getMessage());
         } catch (MalformedJwtException e) {
+            // 捕获格式错误异常，表明JWT token格式不正确
             logger.error("Invalid JWT token: {}", e.getMessage());
         } catch (ExpiredJwtException e) {
+            // 捕获过期异常，表明JWT token已过期
             logger.error("JWT token is expired: {}", e.getMessage());
         } catch (UnsupportedJwtException e) {
+            // 捕获不支持异常，表明JWT token类型不支持
             logger.error("JWT token is unsupported: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
+            // 捕获非法参数异常，表明JWT claims字符串为空
             logger.error("JWT claims string is empty: {}", e.getMessage());
         }
+        // 如果token无效，返回false
         return false;
+
     }
 
     /**
@@ -183,8 +194,23 @@ public class JwtTokenUtil {
      * 获取签名密钥
      */
     private SecretKey getSigningKey() {
+        if (secret == null || secret.isEmpty()) {
+            logger.error("JWT secret is not configured!");
+            throw new IllegalStateException("JWT secret is not configured");
+        }
+
+        // 确保密钥长度足够
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        if (keyBytes.length < 32) {
+            logger.warn("JWT secret is too short ({} bytes), should be at least 32 bytes", keyBytes.length);
+        }
+
+        try {
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            logger.error("Failed to create signing key: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**

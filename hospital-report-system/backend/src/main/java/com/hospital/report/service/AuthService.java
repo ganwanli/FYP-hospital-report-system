@@ -3,6 +3,7 @@ package com.hospital.report.service;
 import com.hospital.report.dto.LoginRequest;
 import com.hospital.report.dto.LoginResponse;
 import com.hospital.report.entity.User;
+import org.springframework.security.core.Authentication;
 
 public interface AuthService {
 
@@ -25,4 +26,6 @@ public interface AuthService {
     void recordLoginSuccess(String username, String clientIp);
 
     void recordLoginFailure(String username);
+
+    Authentication authenticate(String username, String password);
 }

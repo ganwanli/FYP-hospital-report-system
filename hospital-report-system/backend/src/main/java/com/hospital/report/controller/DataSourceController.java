@@ -7,6 +7,7 @@ import com.hospital.report.common.Result;
 import com.hospital.report.dto.DataSourceCreateRequest;
 import com.hospital.report.dto.DataSourceQueryRequest;
 import com.hospital.report.dto.DataSourceUpdateRequest;
+import com.hospital.report.dto.DataSourceTestRequest;
 import com.hospital.report.entity.DataSource;
 import com.hospital.report.service.DataSourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +76,24 @@ public class DataSourceController {
         } catch (Exception e) {
             log.error("查询数据源列表失败", e);
             return Result.error("查询失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/active")
+    @Operation(summary = "获取活跃数据源", description = "获取所有活跃数据源列表，无需认证")
+    // 移除 @RequiresPermission 注解，允许未认证用户访问
+    public Result<List<DataSource>> getActiveDataSources() {
+        try {
+            List<DataSource> dataSources = dataSourceService.findActiveDataSources();
+            // 隐藏敏感信息
+            dataSources.forEach(ds -> {
+                ds.setPassword("******");
+                ds.setUsername("******");
+            });
+            return Result.success(dataSources);
+        } catch (Exception e) {
+            log.error("获取活跃数据源失败", e);
+            return Result.error("获取活跃数据源失败: " + e.getMessage());
         }
     }
 
@@ -228,12 +248,85 @@ public class DataSourceController {
             dataSource.setUsername(request.getUsername());
             dataSource.setPassword(request.getPassword());
             dataSource.setValidationQuery(request.getValidationQuery());
-            
+
             boolean success = dataSourceService.testConnection(dataSource);
             return Result.success(success);
         } catch (Exception e) {
             log.error("测试数据源连接失败", e);
             return Result.error("测试失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/test-simple")
+    @Operation(summary = "简单测试数据源连接", description = "使用简化参数测试数据源连接")
+    public Result<Map<String, Object>> testConnectionSimple(@Valid @RequestBody DataSourceTestRequest request) {
+        try {
+            log.info("开始测试数据源连接: {} - {}:{}/{}",
+                request.getDatabaseType(), request.getHost(), request.getPort(), request.getDatabase());
+
+            DataSource dataSource = new DataSource();
+            dataSource.setDatabaseType(request.getDatabaseType());
+            dataSource.setDriverClassName(request.getDriverClassName());
+            dataSource.setJdbcUrl(request.generateJdbcUrl());
+            dataSource.setUsername(request.getUsername());
+            dataSource.setPassword(request.getPassword());
+            dataSource.setValidationQuery(request.getValidationQuery());
+            dataSource.setConnectionTimeout(request.getTimeout() * 1000L); // 转换为毫秒
+
+            long startTime = System.currentTimeMillis();
+            boolean success = dataSourceService.testConnection(dataSource);
+            long endTime = System.currentTimeMillis();
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", success);
+            result.put("responseTime", endTime - startTime);
+            result.put("jdbcUrl", request.generateJdbcUrl());
+            result.put("driverClass", request.getDriverClassName());
+
+            if (success) {
+                log.info("数据源连接测试成功: {} - {}ms", request.getDatabaseType(), endTime - startTime);
+                result.put("message", "Connection test successful");
+                result.put("messageZh", "连接测试成功");
+                return Result.success(result);
+            } else {
+                log.warn("数据源连接测试失败: {}", request.getDatabaseType());
+                result.put("message", "Connection test failed: 操作失败");
+                result.put("messageZh", "连接测试失败: 操作失败");
+                return Result.error("Connection test failed: 操作失败", result);
+            }
+
+        } catch (Exception e) {
+            log.error("测试数据源连接异常: {} - {}", request.getDatabaseType(), e.getMessage(), e);
+
+            String errorMessage = "Connection test failed: ";
+            String errorMessageZh = "连接测试失败: ";
+
+            // 根据异常类型提供具体的错误信息
+            if (e.getMessage().contains("Communications link failure")) {
+                errorMessage += "无法连接到数据库服务器，请检查主机地址和端口";
+                errorMessageZh += "无法连接到数据库服务器，请检查主机地址和端口";
+            } else if (e.getMessage().contains("Access denied")) {
+                errorMessage += "用户名或密码错误";
+                errorMessageZh += "用户名或密码错误";
+            } else if (e.getMessage().contains("Unknown database")) {
+                errorMessage += "数据库不存在";
+                errorMessageZh += "数据库不存在";
+            } else if (e.getMessage().contains("timeout")) {
+                errorMessage += "连接超时";
+                errorMessageZh += "连接超时";
+            } else {
+                errorMessage += e.getMessage();
+                errorMessageZh += e.getMessage();
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", false);
+            result.put("message", errorMessage);
+            result.put("messageZh", errorMessageZh);
+            result.put("error", e.getClass().getSimpleName());
+            result.put("jdbcUrl", request.generateJdbcUrl());
+
+            return Result.error(errorMessage, result);
         }
     }
 

@@ -26,14 +26,23 @@ public class DataSource extends Model<DataSource> {
     @TableField("datasource_code")
     private String datasourceCode;
 
-    @TableField("database_type")
+    @TableField("datasource_type")
     private String databaseType;
 
-    @TableField("driver_class_name")
+    @TableField("driver_class")
     private String driverClassName;
 
-    @TableField("jdbc_url")
+    @TableField("connection_url")
     private String jdbcUrl;
+
+    @TableField("host")
+    private String host;
+
+    @TableField("port")
+    private Integer port;
+
+    @TableField("database_name")
+    private String databaseName;
 
     @TableField("username")
     private String username;
@@ -41,52 +50,52 @@ public class DataSource extends Model<DataSource> {
     @TableField("password")
     private String password;
 
-    @TableField("initial_size")
+    @TableField("min_pool_size")
     private Integer initialSize;
 
-    @TableField("min_idle")
+    @TableField(exist = false)
     private Integer minIdle;
 
-    @TableField("max_active")
+    @TableField("max_pool_size")
     private Integer maxActive;
 
-    @TableField("max_wait")
+    @TableField(exist = false)
     private Long maxWait;
 
-    @TableField("time_between_eviction_runs_millis")
+    @TableField(exist = false)
     private Long timeBetweenEvictionRunsMillis;
 
-    @TableField("min_evictable_idle_time_millis")
+    @TableField(exist = false)
     private Long minEvictableIdleTimeMillis;
 
-    @TableField("validation_query")
+    @TableField("test_query")
     private String validationQuery;
 
-    @TableField("test_while_idle")
+    @TableField(exist = false)
     private Boolean testWhileIdle;
 
-    @TableField("test_on_borrow")
+    @TableField(exist = false)
     private Boolean testOnBorrow;
 
-    @TableField("test_on_return")
+    @TableField(exist = false)
     private Boolean testOnReturn;
 
     @TableField("connection_timeout")
     private Long connectionTimeout;
 
-    @TableField("idle_timeout")
+    @TableField(exist = false)
     private Long idleTimeout;
 
-    @TableField("max_lifetime")
+    @TableField(exist = false)
     private Long maxLifetime;
 
-    @TableField("leak_detection_threshold")
+    @TableField(exist = false)
     private Long leakDetectionThreshold;
 
     @TableField("status")
     private Integer status;
 
-    @TableField("is_default")
+    @TableField(exist = false)
     private Boolean isDefault;
 
     @TableField("description")
@@ -104,7 +113,7 @@ public class DataSource extends Model<DataSource> {
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
 
-    @TableField("is_deleted")
+    @TableField("deleted")
     @TableLogic
     private Boolean isDeleted;
 

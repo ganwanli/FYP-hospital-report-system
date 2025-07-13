@@ -3,7 +3,9 @@ package com.hospital.report.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hospital.report.config.DynamicDataSourceManager;
 import com.hospital.report.entity.DataSource;
+import com.hospital.report.entity.User;
 import com.hospital.report.mapper.DataSourceMapper;
+import com.hospital.report.service.AuthService;
 import com.hospital.report.service.DataSourceService;
 import com.hospital.report.utils.AESUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
 
     private final DataSourceMapper dataSourceMapper;
     private final DynamicDataSourceManager dataSourceManager;
+    private final AuthService authService;
     private final AESUtil aesUtil;
 
     private static final Map<String, String> DATABASE_DRIVERS = new HashMap<>();
@@ -111,6 +114,27 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 dataSource.setValidationQuery(getValidationQuery(dataSource.getDatabaseType()));
             }
 
+            // 从 jdbcUrl 中提取 host 和 port
+            extractHostAndPortFromJdbcUrl(dataSource);
+
+            // 设置创建者和更新者信息
+            try {
+                User currentUser = authService.getCurrentUser();
+                if (currentUser != null) {
+                    dataSource.setCreatedBy(currentUser.getId());
+                    dataSource.setUpdatedBy(currentUser.getId());
+                } else {
+                    // 如果没有当前用户（比如系统初始化），设置为系统用户ID
+                    dataSource.setCreatedBy(1L);
+                    dataSource.setUpdatedBy(1L);
+                }
+            } catch (Exception e) {
+                log.warn("无法获取当前用户信息，使用默认用户ID", e);
+                // 设置为系统用户ID
+                dataSource.setCreatedBy(1L);
+                dataSource.setUpdatedBy(1L);
+            }
+
             dataSource.setCreatedTime(LocalDateTime.now());
             dataSource.setUpdatedTime(LocalDateTime.now());
             dataSource.setStatus(1);
@@ -144,6 +168,19 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 dataSource.setPassword(encryptPassword(dataSource.getPassword()));
             }
 
+            // 设置更新者信息
+            try {
+                User currentUser = authService.getCurrentUser();
+                if (currentUser != null) {
+                    dataSource.setUpdatedBy(currentUser.getId());
+                } else {
+                    dataSource.setUpdatedBy(1L);
+                }
+            } catch (Exception e) {
+                log.warn("无法获取当前用户信息，使用默认用户ID", e);
+                dataSource.setUpdatedBy(1L);
+            }
+
             dataSource.setUpdatedTime(LocalDateTime.now());
             boolean result = updateById(dataSource);
             if (result) {
@@ -166,10 +203,25 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 return false;
             }
 
-            // 逻辑删除
-            dataSource.setIsDeleted(true);
+            // 先设置更新者信息，然后进行逻辑删除
+            try {
+                User currentUser = authService.getCurrentUser();
+                if (currentUser != null) {
+                    dataSource.setUpdatedBy(currentUser.getId());
+                } else {
+                    dataSource.setUpdatedBy(1L);
+                }
+            } catch (Exception e) {
+                log.warn("无法获取当前用户信息，使用默认用户ID", e);
+                dataSource.setUpdatedBy(1L);
+            }
+
             dataSource.setUpdatedTime(LocalDateTime.now());
-            boolean result = updateById(dataSource);
+            // 先更新 updated_by 和 updated_time
+            updateById(dataSource);
+
+            // 使用 MyBatis-Plus 的逻辑删除
+            boolean result = removeById(dataSourceId);
 
             if (result) {
                 // 移除动态数据源
@@ -189,9 +241,11 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
             try {
                 DynamicDataSourceManager.DataSourceConfig config = convertToConfig(dataSource);
                 dataSourceManager.createDataSource(code, config);
-                log.info("刷新数据源成功: {}", code);
+                log.info("动态数据源刷新成功: {}", code);
             } catch (Exception e) {
-                log.error("刷新数据源失败: {}", code, e);
+                // 动态数据源创建失败不应该影响数据库更新操作
+                // 只记录警告，不抛出异常
+                log.warn("动态数据源刷新失败，但数据库更新已成功: {} - {}", code, e.getMessage());
             }
         }
     }
@@ -253,7 +307,120 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
 
     private DynamicDataSourceManager.DataSourceConfig convertToConfig(DataSource dataSource) {
         DynamicDataSourceManager.DataSourceConfig config = new DynamicDataSourceManager.DataSourceConfig();
-        BeanUtils.copyProperties(dataSource, config);
+
+        // 添加调试日志
+        log.debug("Converting DataSource to Config:");
+        log.debug("  datasourceCode: {}", dataSource.getDatasourceCode());
+        log.debug("  databaseType: {}", dataSource.getDatabaseType());
+        log.debug("  driverClassName: {}", dataSource.getDriverClassName());
+        log.debug("  jdbcUrl: {}", dataSource.getJdbcUrl());
+        log.debug("  username: {}", dataSource.getUsername());
+
+        // 手动设置字段值以确保正确复制
+        config.setDatasourceCode(dataSource.getDatasourceCode());
+        config.setDatabaseType(dataSource.getDatabaseType());
+        config.setDriverClassName(dataSource.getDriverClassName());
+        config.setJdbcUrl(dataSource.getJdbcUrl());
+        config.setUsername(dataSource.getUsername());
+        config.setPassword(dataSource.getPassword());
+        config.setMinIdle(dataSource.getInitialSize());
+        config.setMaxActive(dataSource.getMaxActive());
+        config.setConnectionTimeout(dataSource.getConnectionTimeout());
+
+        // 验证关键字段不为空
+        if (config.getDriverClassName() == null) {
+            log.error("DriverClassName is null after conversion!");
+        }
+
         return config;
+    }
+
+    /**
+     * 从 JDBC URL 中提取 host 和 port
+     */
+    private void extractHostAndPortFromJdbcUrl(DataSource dataSource) {
+        String jdbcUrl = dataSource.getJdbcUrl();
+        if (jdbcUrl != null && !jdbcUrl.isEmpty()) {
+            try {
+                // 解析不同类型的 JDBC URL
+                if (jdbcUrl.startsWith("jdbc:mysql://")) {
+                    // MySQL: jdbc:mysql://localhost:3306/database
+                    String remaining = jdbcUrl.substring("jdbc:mysql://".length());
+                    int slashIndex = remaining.indexOf('/');
+
+                    String hostPort;
+                    String databaseName = "";
+
+                    if (slashIndex > 0) {
+                        hostPort = remaining.substring(0, slashIndex);
+                        // 提取数据库名称
+                        String dbPart = remaining.substring(slashIndex + 1);
+                        int questionIndex = dbPart.indexOf('?');
+                        if (questionIndex > 0) {
+                            databaseName = dbPart.substring(0, questionIndex);
+                        } else {
+                            databaseName = dbPart;
+                        }
+                    } else {
+                        hostPort = remaining;
+                    }
+
+                    String[] parts = hostPort.split(":");
+                    dataSource.setHost(parts[0]);
+                    if (parts.length > 1) {
+                        dataSource.setPort(Integer.parseInt(parts[1]));
+                    } else {
+                        dataSource.setPort(3306); // MySQL 默认端口
+                    }
+                    dataSource.setDatabaseName(databaseName);
+                } else if (jdbcUrl.startsWith("jdbc:postgresql://")) {
+                    // PostgreSQL: jdbc:postgresql://localhost:5432/database
+                    String remaining = jdbcUrl.substring("jdbc:postgresql://".length());
+                    int slashIndex = remaining.indexOf('/');
+
+                    String hostPort;
+                    String databaseName = "";
+
+                    if (slashIndex > 0) {
+                        hostPort = remaining.substring(0, slashIndex);
+                        // 提取数据库名称
+                        String dbPart = remaining.substring(slashIndex + 1);
+                        int questionIndex = dbPart.indexOf('?');
+                        if (questionIndex > 0) {
+                            databaseName = dbPart.substring(0, questionIndex);
+                        } else {
+                            databaseName = dbPart;
+                        }
+                    } else {
+                        hostPort = remaining;
+                    }
+
+                    String[] parts = hostPort.split(":");
+                    dataSource.setHost(parts[0]);
+                    if (parts.length > 1) {
+                        dataSource.setPort(Integer.parseInt(parts[1]));
+                    } else {
+                        dataSource.setPort(5432); // PostgreSQL 默认端口
+                    }
+                    dataSource.setDatabaseName(databaseName);
+                } else {
+                    // 默认情况，尝试提取 localhost
+                    dataSource.setHost("localhost");
+                    dataSource.setPort(3306);
+                    dataSource.setDatabaseName("test");
+                }
+            } catch (Exception e) {
+                log.warn("无法从 JDBC URL 中提取 host 和 port: {}", jdbcUrl, e);
+                // 设置默认值
+                dataSource.setHost("localhost");
+                dataSource.setPort(3306);
+                dataSource.setDatabaseName("test");
+            }
+        } else {
+            // 设置默认值
+            dataSource.setHost("localhost");
+            dataSource.setPort(3306);
+            dataSource.setDatabaseName("test");
+        }
     }
 }

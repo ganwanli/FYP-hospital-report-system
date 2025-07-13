@@ -104,9 +104,11 @@ jwt:
 logging:
   level:
     root: INFO
+    org.springframework.security: DEBUG
+    com.hospital.report.config: DEBUG
+    com.hospital.report.security: DEBUG
     com.hospital.report: DEBUG
     com.hospital.report.mapper: DEBUG
-    org.springframework.security: DEBUG
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
     file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
@@ -144,6 +146,7 @@ app:
       - /webjars/**
       - /actuator/**
       - /druid/**
+      - /api/system/**
     # 跨域配置
     cors:
       allowed-origins: 
