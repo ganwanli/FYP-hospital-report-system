@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL资产管理过滤功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        select, input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .asset-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #fff;
+        }
+        .asset-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .asset-category {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .asset-description {
+            color: #888;
+            font-size: 13px;
+        }
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SQL资产管理过滤功能测试</h1>
+        
+        <div class="test-info">
+            <h3>测试说明</h3>
+            <p>这个页面用于测试SQL资产管理的分类过滤功能。选择不同的分类类型和具体分类，查看过滤结果是否正确。</p>
+        </div>
+
+        <div class="filter-section">
+            <h3>过滤条件</h3>
+            
+            <div class="filter-group">
+                <label for="categoryType">分类类型:</label>
+                <select id="categoryType" onchange="updateCategories()">
+                    <option value="business">业务分类</option>
+                    <option value="department">科室分类</option>
+                    <option value="usage">用途分类</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="selectedCategory">具体分类:</label>
+                <select id="selectedCategory" onchange="filterAssets()">
+                    <option value="all">全部</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="searchTerm">搜索关键词:</label>
+                <input type="text" id="searchTerm" placeholder="输入关键词搜索..." onkeyup="filterAssets()">
+            </div>
+        </div>
+
+        <div class="results">
+            <h3>过滤结果 (<span id="resultCount">0</span> 项)</h3>
+            <div id="assetList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟分类数据
+        const categories = {
+            business: [
+                { value: "outpatient", label: "门诊" },
+                { value: "inpatient", label: "住院" },
+                { value: "emergency", label: "急诊" },
+                { value: "performance", label: "绩效" },
+                { value: "internal_medicine", label: "内科" },
+                { value: "surgery", label: "外科" }
+            ],
+            department: [
+                { value: "info_dept", label: "信息科" },
+                { value: "finance_dept", label: "财务科" },
+                { value: "hr_dept", label: "人事科" },
+                { value: "emergency_dept", label: "急诊科" },
+                { value: "internal_medicine_dept", label: "内科" },
+                { value: "surgery_dept", label: "外科" }
+            ],
+            usage: [
+                { value: "reporting", label: "上报类" },
+                { value: "internal_ops", label: "内部运营" },
+                { value: "performance_eval", label: "绩效考核" },
+                { value: "quality_control", label: "质量监控" }
+            ]
+        };
+
+        // 模拟SQL资产数据
+        const mockAssets = [
+            {
+                id: 1,
+                name: "门诊患者统计",
+                category: "门诊",
+                type: "上报类",
+                department: "信息科",
+                creator: "张医生",
+                createTime: "2024-01-15 10:30",
+                lastModified: "2024-01-20 14:20",
+                description: "统计每日门诊患者数量和科室分布情况"
+            },
+            {
+                id: 2,
+                name: "住院收入分析",
+                category: "住院",
+                type: "内部运营",
+                department: "财务科",
+                creator: "李会计",
+                createTime: "2024-01-10 09:15",
+                lastModified: "2024-01-18 16:45",
+                description: "分析各科室住院患者收入情况"
+            },
+            {
+                id: 3,
+                name: "医生绩效考核",
+                category: "绩效",
+                type: "绩效考核",
+                department: "人事科",
+                creator: "王主任",
+                createTime: "2024-01-05 11:20",
+                lastModified: "2024-01-22 13:10",
+                description: "医生月度绩效考核指标统计"
+            },
+            {
+                id: 4,
+                name: "急诊科日报表",
+                category: "急诊",
+                type: "上报类",
+                department: "急诊科",
+                creator: "急诊科医生",
+                createTime: "2024-01-08 14:30",
+                lastModified: "2024-01-25 09:15",
+                description: "急诊科每日患者统计"
+            },
+            {
+                id: 5,
+                name: "内科门诊统计",
+                category: "内科",
+                type: "内部运营",
+                department: "内科",
+                creator: "内科医生",
+                createTime: "2024-01-12 16:20",
+                lastModified: "2024-01-28 11:45",
+                description: "内科门诊患者统计"
+            },
+            {
+                id: 6,
+                name: "外科手术统计",
+                category: "外科",
+                type: "质量监控",
+                department: "外科",
+                creator: "外科医生",
+                createTime: "2024-01-15 08:30",
+                lastModified: "2024-01-30 15:20",
+                description: "外科手术数量统计"
+            }
+        ];
+
+        // 获取分类标签
+        function getCategoryLabel(type, value) {
+            if (value === "all" || !value) return null;
+            const category = categories[type]?.find(cat => cat.value === value);
+            return category ? category.label : value;
+        }
+
+        // 更新分类选项
+        function updateCategories() {
+            const categoryType = document.getElementById('categoryType').value;
+            const selectedCategory = document.getElementById('selectedCategory');
+            
+            // 清空现有选项
+            selectedCategory.innerHTML = '<option value="all">全部</option>';
+            
+            // 添加新选项
+            categories[categoryType].forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.value;
+                option.textContent = category.label;
+                selectedCategory.appendChild(option);
+            });
+            
+            // 重新过滤
+            filterAssets();
+        }
+
+        // 过滤资产
+        function filterAssets() {
+            const categoryType = document.getElementById('categoryType').value;
+            const selectedCategory = document.getElementById('selectedCategory').value;
+            const searchTerm = document.getElementById('searchTerm').value.toLowerCase();
+            
+            console.log('Filtering with:', { categoryType, selectedCategory, searchTerm });
+            
+            let filteredAssets = mockAssets;
+            
+            // 按分类过滤
+            if (selectedCategory !== "all") {
+                const categoryLabel = getCategoryLabel(categoryType, selectedCategory);
+                console.log('Category label:', categoryLabel);
+                
+                filteredAssets = filteredAssets.filter(asset => {
+                    if (categoryType === "business") {
+                        return asset.category === categoryLabel;
+                    } else if (categoryType === "department") {
+                        return asset.department === categoryLabel;
+                    } else if (categoryType === "usage") {
+                        return asset.type === categoryLabel;
+                    }
+                    return true;
+                });
+            }
+            
+            // 按搜索词过滤
+            if (searchTerm) {
+                filteredAssets = filteredAssets.filter(asset => 
+                    asset.name.toLowerCase().includes(searchTerm) ||
+                    asset.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            console.log('Filtered results:', filteredAssets);
+            
+            // 显示结果
+            displayAssets(filteredAssets);
+        }
+
+        // 显示资产列表
+        function displayAssets(assets) {
+            const assetList = document.getElementById('assetList');
+            const resultCount = document.getElementById('resultCount');
+            
+            resultCount.textContent = assets.length;
+            
+            if (assets.length === 0) {
+                assetList.innerHTML = '<div class="no-results">没有找到匹配的SQL资产</div>';
+                return;
+            }
+            
+            assetList.innerHTML = assets.map(asset => `
+                <div class="asset-item">
+                    <div class="asset-title">${asset.name}</div>
+                    <div class="asset-category">分类: ${asset.category} | 类型: ${asset.type} | 科室: ${asset.department}</div>
+                    <div class="asset-description">${asset.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCategories();
+        });
+    </script>
+</body>
+</html>
