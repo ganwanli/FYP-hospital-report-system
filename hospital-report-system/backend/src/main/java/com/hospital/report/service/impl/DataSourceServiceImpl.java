@@ -14,6 +14,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -45,7 +47,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
         VALIDATION_QUERIES.put("H2", "SELECT 1");
     }
 
-    // @PostConstruct
+    @PostConstruct
     public void initDataSources() {
         log.info("初始化动态数据源...");
         refreshAllDataSources();

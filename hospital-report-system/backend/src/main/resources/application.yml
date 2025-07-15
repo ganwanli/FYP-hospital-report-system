@@ -136,9 +136,10 @@ app:
   security:
     # 忽略认证的URL
     ignore-urls:
-      - /api/auth/login
-      - /api/auth/logout
-      - /api/auth/refresh
+      urls:
+      - /auth/login
+      - /auth/logout
+      - /auth/refresh
       - /swagger-ui/**
       - /v3/api-docs/**
       - /swagger-ui.html
@@ -146,7 +147,10 @@ app:
       - /webjars/**
       - /actuator/**
       - /druid/**
-      - /api/system/**
+      - /system/**
+      - /datasource/**
+      - /sql-execution/**
+      - /sql-templates/**
     # 跨域配置
     cors:
       allowed-origins: 

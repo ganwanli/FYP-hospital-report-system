@@ -6,17 +6,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,12 +36,14 @@ import java.util.Arrays;
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(IgnoreUrlsConfig.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CorsConfigurationSource corsConfigurationSource;
+
 
     @PostConstruct
     public void init() {
@@ -52,6 +57,11 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         log.info("创建 PasswordEncoder Bean");
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public IgnoreUrlsConfig ignoreUrlsConfig() {
+        return new IgnoreUrlsConfig();
     }
 
     @Bean
@@ -112,20 +122,21 @@ public class SecurityConfig {
             })
             .authorizeHttpRequests(authorize -> {
                 log.info("配置请求授权");
-                authorize
-                    .requestMatchers("/auth/**").permitAll()  // 移除 /api 前缀，因为context path已经是/api
-                    .requestMatchers("/datasource/active").permitAll()
-                    .requestMatchers("/datasource/list").permitAll()
-                    .requestMatchers("/datasource", "/datasource/**").permitAll()  // 允许数据源CRUD操作公开访问
-                    .requestMatchers("/datasource/test-simple").permitAll()  // 允许数据源测试连接公开访问
-                    .requestMatchers("/system/dict/items/**").permitAll()
-                    .requestMatchers("/system/depts", "/system/depts/**").permitAll()  // 允许部门接口公开访问
-                    .requestMatchers("/sql-templates", "/sql-templates/**").permitAll()  // 允许SQL模板相关接口公开访问
-                    .requestMatchers(HttpMethod.GET, "/sql-templates").permitAll()  // 明确允许GET请求
-                    .requestMatchers(HttpMethod.GET, "/sql-templates/**").permitAll()  // 明确允许GET请求
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
-                    .requestMatchers("/actuator/**").permitAll()
-                    .anyRequest().authenticated();
+                String[] urls = ignoreUrlsConfig().getUrls();
+                log.info("忽略URL配置: {}", urls != null ? java.util.Arrays.toString(urls) : "null");
+                if (urls != null) {
+                    for (String url : urls) {
+                        log.info("添加公开访问URL: {}", url);
+                        authorize.requestMatchers(new AntPathRequestMatcher(url)).permitAll();
+                    }
+                } else {
+                    log.warn("忽略URL配置为空，使用默认配置");
+                    // 添加默认的公开端点
+                    authorize.requestMatchers(new AntPathRequestMatcher("/api/datasource/**")).permitAll();
+                    authorize.requestMatchers(new AntPathRequestMatcher("/api/sql-execution/**")).permitAll();
+                    authorize.requestMatchers(new AntPathRequestMatcher("/api/sql-templates/**")).permitAll();
+                }
+                authorize.anyRequest().authenticated();
             })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

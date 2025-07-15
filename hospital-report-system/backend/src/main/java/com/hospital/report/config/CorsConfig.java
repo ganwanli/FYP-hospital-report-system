@@ -20,22 +20,26 @@ import java.util.List;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    private List<String> allowedOrigins = Arrays.asList(
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:8081",
-        "http://127.0.0.1:8081"
+    private List<String> allowedOriginPatterns = Arrays.asList(
+        "http://localhost:*",
+        "http://127.0.0.1:*"
     );
 
     private List<String> allowedMethods = Arrays.asList(
         "GET", "POST", "PUT", "DELETE", "OPTIONS"
     );
 
-    private String allowedHeaders = "*";
+    private List<String> allowedHeaders = Arrays.asList(
+        "Authorization",
+        "Content-Type",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+    );
 
-    private boolean allowCredentials = true;
+    private boolean allowCredentials = false;
 
     private long maxAge = 3600;
 
@@ -45,9 +49,9 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns(allowedOrigins.toArray(new String[0]))
+                .allowedOriginPatterns(allowedOriginPatterns.toArray(new String[0]))
                 .allowedMethods(allowedMethods.toArray(new String[0]))
-                .allowedHeaders(allowedHeaders)
+                .allowedHeaders(allowedHeaders.toArray(new String[0]))
                 .allowCredentials(allowCredentials)
                 .maxAge(maxAge);
     }
@@ -60,13 +64,13 @@ public class CorsConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // 设置允许的源
-        configuration.setAllowedOriginPatterns(allowedOrigins);
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns);
         
         // 设置允许的方法
         configuration.setAllowedMethods(allowedMethods);
         
         // 设置允许的头部
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(allowedHeaders);
         
         // 设置暴露的头部
         configuration.setExposedHeaders(Arrays.asList(

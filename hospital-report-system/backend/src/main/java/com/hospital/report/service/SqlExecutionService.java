@@ -29,6 +29,8 @@ public interface SqlExecutionService {
 
     Map<String, Object> explainQuery(String sqlContent, String databaseType);
 
+    Map<String, Object> explainSql(String sqlContent, String databaseType);
+
     List<Map<String, Object>> getSlowQueries(Integer limit);
 
     void optimizeQuery(String sqlContent, String databaseType);

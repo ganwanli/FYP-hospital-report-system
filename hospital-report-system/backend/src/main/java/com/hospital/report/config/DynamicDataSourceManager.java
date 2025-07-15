@@ -109,11 +109,14 @@ public class DynamicDataSourceManager {
         
         // 解密密码
         String password = config.getPassword();
-//        try {
-//            password = aesUtil.decrypt(password);
-//        } catch (Exception e) {
-//            log.warn("密码解密失败，使用原始密码", e);
-//        }
+        try {
+            if (password != null && !password.isEmpty()) {
+                password = aesUtil.decrypt(password);
+                log.debug("密码解密成功");
+            }
+        } catch (Exception e) {
+            log.warn("密码解密失败，使用原始密码: {}", e.getMessage());
+        }
         hikariConfig.setPassword(password);
         
         // 连接池配置

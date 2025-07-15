@@ -109,6 +109,8 @@ private boolean isPublicEndpoint(String requestURI) {
         "/api/system/depts",
         "/api/sql-templates",
         "/api/sql-templates/",
+        "/api/sql-execution",  // SQL执行相关接口
+        "/api/sql-execution/",
         "/api/swagger-ui/",
         "/api/v3/api-docs/",
         "/api/actuator/"
@@ -122,6 +124,11 @@ private boolean isPublicEndpoint(String requestURI) {
 
     // 特殊处理SQL模板相关的所有端点
     if (requestURI.contains("/sql-templates")) {
+        return true;
+    }
+
+    // 特殊处理SQL执行相关的所有端点
+    if (requestURI.contains("/sql-execution")) {
         return true;
     }
 

@@ -25,7 +25,7 @@ echo "✅ npm 版本: $(npm --version)"
 echo ""
 
 # 进入 healthinsight 目录
-cd healthinsight
+cd new_frontend
 
 # 检查是否已安装依赖
 if [ ! -d "node_modules" ]; then

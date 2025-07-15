@@ -97,6 +97,32 @@ public class DataSourceController {
         }
     }
 
+    @PostMapping("/refresh/{code}")
+    @Operation(summary = "刷新数据源连接", description = "重新创建指定数据源的连接池，无需认证")
+    public Result<String> refreshDataSource(@PathVariable String code) {
+        try {
+            log.info("刷新数据源连接: {}", code);
+            dataSourceService.refreshDataSource(code);
+            return Result.success("数据源连接刷新成功");
+        } catch (Exception e) {
+            log.error("刷新数据源连接失败: {}", code, e);
+            return Result.error("刷新数据源连接失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/refresh-all")
+    @Operation(summary = "刷新所有数据源连接", description = "重新创建所有活跃数据源的连接池，无需认证")
+    public Result<String> refreshAllDataSources() {
+        try {
+            log.info("刷新所有数据源连接");
+            dataSourceService.refreshAllDataSources();
+            return Result.success("所有数据源连接刷新成功");
+        } catch (Exception e) {
+            log.error("刷新所有数据源连接失败", e);
+            return Result.error("刷新所有数据源连接失败: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "根据ID查询数据源", description = "根据数据源ID查询数据源详情")
     @RequiresPermission("DATASOURCE_QUERY")

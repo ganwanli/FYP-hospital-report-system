@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # 项目路径
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="${PROJECT_DIR}/backend"
-HEALTHINSIGHT_DIR="${PROJECT_DIR}/healthinsight"
+HEALTHINSIGHT_DIR="${PROJECT_DIR}/new_frontend"
 DATABASE_DIR="${PROJECT_DIR}/database"
 
 # 配置
