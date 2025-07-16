@@ -147,7 +147,7 @@ app:
       - /webjars/**
       - /actuator/**
       - /druid/**
-      - /system/**
+      - /system/dict/**
       - /datasource/**
       - /sql-execution/**
       - /sql-templates/**

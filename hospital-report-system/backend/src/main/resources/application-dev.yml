@@ -61,17 +61,21 @@ app:
   security:
     # 忽略认证的URL
     ignore-urls:
-      - /api/auth/login
-      - /api/auth/logout
-      - /api/auth/refresh
-      - /swagger-ui/**
-      - /v3/api-docs/**
-      - /swagger-ui.html
-      - /swagger-resources/**
-      - /webjars/**
-      - /actuator/**
-      - /druid/**
-      - /api/system/**
+      urls:
+        - /auth/login
+        - /auth/logout
+        - /auth/refresh
+        - /swagger-ui/**
+        - /v3/api-docs/**
+        - /swagger-ui.html
+        - /swagger-resources/**
+        - /webjars/**
+        - /actuator/**
+        - /druid/**
+        - /datasource/**
+        - /sql-execution/**
+        - /sql-templates/**
+#        - /system/dict/**
     cors:
       allowed-origins: 
         - http://localhost:3000

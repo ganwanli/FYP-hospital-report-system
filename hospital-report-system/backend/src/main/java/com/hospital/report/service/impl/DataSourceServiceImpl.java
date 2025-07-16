@@ -50,7 +50,12 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
     @PostConstruct
     public void initDataSources() {
         log.info("初始化动态数据源...");
-        refreshAllDataSources();
+        try {
+            refreshAllDataSources();
+            log.info("动态数据源初始化完成");
+        } catch (Exception e) {
+            log.warn("动态数据源初始化失败，但应用将继续启动: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -256,7 +261,11 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
     public void refreshAllDataSources() {
         List<DataSource> activeDataSources = findActiveDataSources();
         for (DataSource dataSource : activeDataSources) {
-            refreshDataSource(dataSource.getDatasourceCode());
+            try {
+                refreshDataSource(dataSource.getDatasourceCode());
+            } catch (Exception e) {
+                log.warn("刷新数据源 {} 失败，跳过: {}", dataSource.getDatasourceCode(), e.getMessage());
+            }
         }
     }
 
