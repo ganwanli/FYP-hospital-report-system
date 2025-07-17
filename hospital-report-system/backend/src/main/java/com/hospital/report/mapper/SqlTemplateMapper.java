@@ -21,38 +21,36 @@ public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
     SqlTemplate selectByIdWithUserInfo(@Param("templateId") Long templateId);
 
     @Select("<script>" +
-            "SELECT t.*, u1.username as created_by_name, u2.username as updated_by_name " +
-            "FROM sql_template t " +
-            "LEFT JOIN user u1 ON t.created_by = u1.user_id " +
-            "LEFT JOIN user u2 ON t.updated_by = u2.user_id " +
+            "SELECT t.* " +
+            "FROM sql_template t  " +
             "WHERE 1=1 " +
-            "<if test='templateName != null and templateName != \"\"'>" +
-            "AND t.template_name LIKE CONCAT('%', #{templateName}, '%') " +
+            "<if test='templateName != null and templateName.trim() != \"\"'>" +
+            "  AND t.template_name LIKE CONCAT('%', #{templateName}, '%') " +
             "</if>" +
-            "<if test='templateCategory != null and templateCategory != \"\"'>" +
-            "AND t.template_category = #{templateCategory} " +
+            "<if test='templateCategory != null and templateCategory.trim() != \"\"'>" +
+            "  AND t.template_category = #{templateCategory} " +
             "</if>" +
             "<if test='isActive != null'>" +
-            "AND t.is_active = #{isActive} " +
+            "  AND t.is_active = #{isActive} " +
             "</if>" +
             "<if test='isPublic != null'>" +
-            "AND t.is_public = #{isPublic} " +
+            "  AND t.is_public = #{isPublic} " +
             "</if>" +
             "<if test='createdBy != null'>" +
-            "AND t.created_by = #{createdBy} " +
+            "  AND t.created_by = #{createdBy} " +
             "</if>" +
-            "<if test='tags != null and tags != \"\"'>" +
-            "AND t.tags LIKE CONCAT('%', #{tags}, '%') " +
+            "<if test='tags != null and tags.trim() != \"\"'>" +
+            "  AND t.tags LIKE CONCAT('%', #{tags}, '%') " +
             "</if>" +
-            "<if test='databaseType != null and databaseType != \"\"'>" +
-            "AND t.database_type = #{databaseType} " +
+            "<if test='databaseType != null and databaseType.trim() != \"\"'>" +
+            "  AND t.database_type = #{databaseType} " +
             "</if>" +
-            "<if test='approvalStatus != null and approvalStatus != \"\"'>" +
-            "AND t.approval_status = #{approvalStatus} " +
+            "<if test='approvalStatus != null and approvalStatus.trim() != \"\"'>" +
+            "  AND t.approval_status = #{approvalStatus} " +
             "</if>" +
             "ORDER BY t.updated_time DESC" +
             "</script>")
-    IPage<SqlTemplate> selectTemplateList(Page<SqlTemplate> page, 
+    IPage<SqlTemplate> selectTemplateList(Page<SqlTemplate> page,
                                           @Param("templateName") String templateName,
                                           @Param("templateCategory") String templateCategory,
                                           @Param("isActive") Boolean isActive,

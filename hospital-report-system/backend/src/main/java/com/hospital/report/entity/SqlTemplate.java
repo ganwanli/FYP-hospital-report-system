@@ -32,11 +32,23 @@ public class SqlTemplate {
     @TableField("template_version")
     private String templateVersion;
 
+    @TableField("database_type")
+    private String databaseType;
+
     @TableField("is_active")
     private Boolean isActive;
 
     @TableField("is_public")
     private Boolean isPublic;
+
+    @TableField("usage_count")
+    private Integer usageCount;
+
+    @TableField("tags")
+    private String tags;
+
+    @TableField("approval_status")
+    private String approvalStatus;
 
     @TableField("created_by")
     private Long createdBy;
@@ -50,41 +62,29 @@ public class SqlTemplate {
     @TableField("updated_time")
     private LocalDateTime updatedTime;
 
-    @TableField("usage_count")
-    private Integer usageCount;
-
-    @TableField("last_used_time")
-    private LocalDateTime lastUsedTime;
-
-    @TableField("tags")
-    private String tags;
-
-    @TableField("database_type")
-    private String databaseType;
-
-    @TableField("execution_timeout")
-    private Integer executionTimeout;
-
-    @TableField("max_rows")
-    private Integer maxRows;
-
-    @TableField("validation_status")
-    private String validationStatus;
-
-    @TableField("validation_message")
-    private String validationMessage;
-
-    @TableField("template_hash")
-    private String templateHash;
-
-    @TableField("approval_status")
-    private String approvalStatus;
-
     @TableField("approved_by")
     private Long approvedBy;
 
     @TableField("approved_time")
     private LocalDateTime approvedTime;
+
+    @TableField("department_code")
+    private String departmentCode;
+
+    @TableField("business_type")
+    private String businessType;
+
+    @TableField("usage_type")
+    private String usageType;
+
+    @TableField("execution_timeout")
+    private Integer executionTimeout;
+
+    @TableField("template_hash")
+    private String templateHash;
+
+    @TableField("max_rows")
+    private Integer maxRows;
 
     @TableField(exist = false)
     private List<SqlTemplateParameter> parameters;

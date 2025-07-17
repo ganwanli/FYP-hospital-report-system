@@ -1,7 +1,10 @@
 package com.hospital.report.service.impl;
 
 import com.hospital.report.entity.DictItem;
+import com.hospital.report.entity.SysDict;
+import com.hospital.report.mapper.SysDictMapper;
 import com.hospital.report.service.DictService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -17,20 +20,51 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DictServiceImpl implements DictService {
+
+    private final SysDictMapper sysDictMapper;
 
     @Override
     public List<DictItem> getDictItemsByType(String dictType) {
-        // 直接返回模拟数据，避免数据库表不存在的问题
-        log.info("Getting dict items for type: {}, using mock data", dictType);
-        return getMockDictItems(dictType);
+        try {
+            log.info("Getting dict items for type: {} from database", dictType);
+            List<SysDict> sysDictItems = sysDictMapper.selectByDictType(dictType);
+
+            // 如果数据库中没有数据，返回模拟数据作为备选
+            if (sysDictItems == null || sysDictItems.isEmpty()) {
+                log.warn("No dict items found in database for type: {}, using mock data", dictType);
+                return getMockDictItems(dictType);
+            }
+
+            // 将SysDict转换为DictItem
+            List<DictItem> items = convertSysDictToDictItem(sysDictItems);
+
+            log.info("Found {} dict items for type: {}", items.size(), dictType);
+            return items;
+        } catch (Exception e) {
+            log.error("Error getting dict items for type: {}, using mock data. Error: {}", dictType, e.getMessage());
+            return getMockDictItems(dictType);
+        }
     }
 
     @Override
     public DictItem getDictItem(String dictType, String dictValue) {
-        // 直接返回null，避免数据库查询
-        log.info("Getting dict item for type: {}, value: {}, returning null", dictType, dictValue);
-        return null;
+        try {
+            log.info("Getting dict item for type: {}, value: {} from database", dictType, dictValue);
+            SysDict sysDict = sysDictMapper.selectByTypeAndValue(dictType, dictValue);
+
+            if (sysDict == null) {
+                log.warn("No dict item found for type: {}, value: {}", dictType, dictValue);
+                return null;
+            }
+
+            // 将SysDict转换为DictItem
+            return convertSysDictToDictItem(sysDict);
+        } catch (Exception e) {
+            log.error("Error getting dict item for type: {}, value: {}. Error: {}", dictType, dictValue, e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -73,5 +107,50 @@ public class DictServiceImpl implements DictService {
         item.setSortOrder(sortOrder);
         item.setStatus(1);
         return item;
+    }
+
+    /**
+     * 将SysDict转换为DictItem
+     */
+    private DictItem convertSysDictToDictItem(SysDict sysDict) {
+        if (sysDict == null) {
+            return null;
+        }
+
+        DictItem item = new DictItem();
+        item.setId(sysDict.getId());
+        item.setDictType(sysDict.getDictType());
+        item.setDictValue(sysDict.getDictValue());
+        item.setDictLabel(sysDict.getDictLabel());
+        item.setDictCode(sysDict.getDictCode());
+        item.setSortOrder(sysDict.getSortOrder());
+        item.setStatus(sysDict.getStatus());
+        item.setRemark(sysDict.getDescription()); // 将description映射到remark
+        item.setCreatedBy(sysDict.getCreatedBy());
+        item.setCreatedTime(sysDict.getCreatedTime());
+        item.setUpdatedBy(sysDict.getUpdatedBy());
+        item.setUpdatedTime(sysDict.getUpdatedTime());
+        item.setIsDeleted(sysDict.getDeleted() != null && sysDict.getDeleted() == 1);
+
+        return item;
+    }
+
+    /**
+     * 将SysDict列表转换为DictItem列表
+     */
+    private List<DictItem> convertSysDictToDictItem(List<SysDict> sysDictList) {
+        if (sysDictList == null || sysDictList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<DictItem> items = new ArrayList<>();
+        for (SysDict sysDict : sysDictList) {
+            DictItem item = convertSysDictToDictItem(sysDict);
+            if (item != null) {
+                items.add(item);
+            }
+        }
+
+        return items;
     }
 }

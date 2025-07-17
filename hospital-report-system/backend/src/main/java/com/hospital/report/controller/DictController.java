@@ -29,15 +29,11 @@ public class DictController {
     @Operation(summary = "获取字典项", description = "根据字典类型获取字典项列表")
     // 移除 @RequiresPermission("DICT_QUERY") 注解，允许未认证用户访问
     public Result<List<DictItem>> getDictItems(@PathVariable String dictType) {
-        log.info("开始处理字典项请求: {}", dictType);
         try {
             List<DictItem> items = dictService.getDictItemsByType(dictType);
-            log.info("获取字典项成功: {}, 数量: {}", dictType, items != null ? items.size() : 0);
             Result<List<DictItem>> result = Result.success(items);
-            log.info("构建响应成功: {}", dictType);
             return result;
         } catch (Exception e) {
-            log.error("获取字典项失败: {}", dictType, e);
             return Result.error("获取字典项失败: " + e.getMessage());
         }
     }

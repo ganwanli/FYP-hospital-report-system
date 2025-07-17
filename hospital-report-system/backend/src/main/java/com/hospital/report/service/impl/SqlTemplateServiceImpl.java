@@ -111,12 +111,21 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
     }
 
     @Override
-    public IPage<SqlTemplate> getTemplateList(Page<SqlTemplate> page, String templateName, String templateCategory, 
-                                              Boolean isActive, Boolean isPublic, Long createdBy, String tags, 
+    public IPage<SqlTemplate> getTemplateList(Page<SqlTemplate> page, String templateName, String templateCategory,
+                                              Boolean isActive, Boolean isPublic, Long createdBy, String tags,
                                               String databaseType, String approvalStatus) {
-        return sqlTemplateMapper.selectTemplateList(page, templateName, templateCategory, 
-                                                   isActive, isPublic, createdBy, tags, 
-                                                   databaseType, approvalStatus);
+        try {
+            log.info("Getting template list with page: " + page);
+            log.info("Getting template list with parameters: " + templateName + ", " + templateCategory + ", " + isActive + ", " + isPublic + ", " + createdBy + ", " + tags + ", " + databaseType + ", " + approvalStatus);
+            IPage<SqlTemplate> result = sqlTemplateMapper.selectTemplateList(page, templateName, templateCategory,
+                    isActive, isPublic, createdBy, tags,
+                    databaseType, approvalStatus);
+            log.info("Template list retrieved successfully: " + result);
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to get template list: " + e.getMessage(), e);
+            return new Page<>();
+        }
     }
 
     @Override
