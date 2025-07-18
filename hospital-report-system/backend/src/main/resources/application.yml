@@ -77,7 +77,7 @@ mybatis-plus:
   type-aliases-package: com.hospital.report.entity
   global-config:
     db-config:
-      id-type: ASSIGN_ID
+      id-type: AUTO
       table-underline: true
       logic-delete-field: deleted
       logic-delete-value: 1

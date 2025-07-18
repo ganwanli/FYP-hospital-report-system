@@ -12,11 +12,27 @@ import java.util.Map;
 @Mapper
 public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
 
+    @Insert("INSERT INTO sql_template (" +
+            "template_name, template_description, template_content, template_category, template_version, " +
+            "business_type, usage_type, department_code, tags, database_type, " +
+            "template_hash, is_active, is_public, approval_status, " +
+            "created_by, created_time, updated_by, updated_time, " +
+            "usage_count, execution_timeout, max_rows" +
+            ") VALUES (" +
+            "#{templateName}, #{templateDescription}, #{templateContent}, #{templateCategory}, #{templateVersion}, " +
+            "#{businessType}, #{usageType}, #{departmentCode}, #{tags}, #{databaseType}, " +
+            "#{templateHash}, #{isActive}, #{isPublic}, #{approvalStatus}, " +
+            "#{createdBy}, #{createdTime}, #{updatedBy}, #{updatedTime}, " +
+            "#{usageCount}, #{executionTimeout}, #{maxRows}" +
+            ")")
+    @Options(useGeneratedKeys = true, keyProperty = "templateId", keyColumn = "template_id")
+    int insertTemplate(SqlTemplate template);
+
     @Select("SELECT t.*, u1.username as created_by_name, u2.username as updated_by_name, u3.username as approved_by_name " +
             "FROM sql_template t " +
-            "LEFT JOIN user u1 ON t.created_by = u1.user_id " +
-            "LEFT JOIN user u2 ON t.updated_by = u2.user_id " +
-            "LEFT JOIN user u3 ON t.approved_by = u3.user_id " +
+            "LEFT JOIN sys_user u1 ON t.created_by = u1.id " +
+            "LEFT JOIN sys_user u2 ON t.updated_by = u2.id " +
+            "LEFT JOIN sys_user u3 ON t.approved_by = u3.id " +
             "WHERE t.template_id = #{templateId}")
     SqlTemplate selectByIdWithUserInfo(@Param("templateId") Long templateId);
 
@@ -109,6 +125,15 @@ public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
 
     @Update("UPDATE sql_template SET approval_status = #{approvalStatus}, approved_by = #{approvedBy}, approved_time = NOW() WHERE template_id = #{templateId}")
     int updateApprovalStatus(@Param("templateId") Long templateId, @Param("approvalStatus") String approvalStatus, @Param("approvedBy") Long approvedBy);
+
+    @Update(" UPDATE sql_template " +
+            "SET template_name = #{templateName}, template_description = #{templateDescription}, template_content = #{templateContent}, " +
+            " template_category = #{templateCategory}, template_version = #{templateVersion}," +
+            " business_type = #{businessType}, usage_type = #{usageType}, department_code = #{departmentCode}," +
+            " tags = #{tags}, template_hash = #{templateHash}," +
+            " is_active = #{isActive}, is_public = #{isPublic}, approval_status = #{approvalStatus} " +
+            "WHERE template_id = #{templateId}")
+    int updateTemplateToNewVersion(SqlTemplate newTemplate);
 
     @Select("SELECT * FROM sql_template WHERE approval_status = 'PENDING' ORDER BY created_time ASC")
     List<SqlTemplate> selectPendingApprovalTemplates();

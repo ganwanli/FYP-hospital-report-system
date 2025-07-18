@@ -9,10 +9,24 @@ import java.util.List;
 @Mapper
 public interface SqlTemplateVersionMapper extends BaseMapper<SqlTemplateVersion> {
 
+    @Insert("INSERT INTO sql_template_version (" +
+            "template_id, version_number, version_description, template_content, " +
+            "change_log, is_current, created_by, created_time, " +
+            "template_hash, parent_version_id, validation_status, validation_message, " +
+            "approval_status, approved_by, approved_time" +
+            ") VALUES (" +
+            "#{templateId}, #{versionNumber}, #{versionDescription}, #{templateContent}, " +
+            "#{changeLog}, #{isCurrent}, #{createdBy}, #{createdTime}, " +
+            "#{templateHash}, #{parentVersionId}, #{validationStatus}, #{validationMessage}, " +
+            "#{approvalStatus}, #{approvedBy}, #{approvedTime}" +
+            ")")
+    @Options(useGeneratedKeys = true, keyProperty = "versionId", keyColumn = "version_id")
+    int insertVersion(SqlTemplateVersion version);
+
     @Select("SELECT v.*, u1.username as created_by_name, u2.username as approved_by_name " +
             "FROM sql_template_version v " +
-            "LEFT JOIN user u1 ON v.created_by = u1.user_id " +
-            "LEFT JOIN user u2 ON v.approved_by = u2.user_id " +
+            "LEFT JOIN sys_user u1 ON v.created_by = u1.id " +
+            "LEFT JOIN sys_user u2 ON v.approved_by = u2.id " +
             "WHERE v.template_id = #{templateId} " +
             "ORDER BY v.created_time DESC")
     List<SqlTemplateVersion> selectByTemplateIdWithUserInfo(@Param("templateId") Long templateId);

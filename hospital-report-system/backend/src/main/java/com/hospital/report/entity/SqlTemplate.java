@@ -86,6 +86,9 @@ public class SqlTemplate {
     @TableField("max_rows")
     private Integer maxRows;
 
+    @TableField("last_used_time")
+    private LocalDateTime lastUsedTime;
+
     @TableField(exist = false)
     private List<SqlTemplateParameter> parameters;
 

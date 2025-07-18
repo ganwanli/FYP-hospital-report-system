@@ -39,39 +39,63 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
     @Override
     @Transactional
     public SqlTemplate createTemplate(SqlTemplate template) {
-        template.setCreatedTime(LocalDateTime.now());
-        template.setUpdatedTime(LocalDateTime.now());
-        template.setUsageCount(0);
-        template.setIsActive(true);
-        template.setApprovalStatus("PENDING");
-        
-        if (template.getTemplateContent() != null) {
-            template.setTemplateHash(generateTemplateHash(template.getTemplateContent()));
+        try {
+            // 设置基本属性
+            template.setCreatedTime(LocalDateTime.now());
+            template.setUpdatedTime(LocalDateTime.now());
+            template.setTemplateVersion("v1.0");
+            template.setUsageCount(0);
+            template.setIsActive(true);
+            template.setApprovalStatus("PENDING");
+
+            // 生成内容哈希
+            if (template.getTemplateContent() != null) {
+                template.setTemplateHash(generateTemplateHash(template.getTemplateContent()));
+            }
+
+            // 插入模板到数据库（使用自定义insert方法确保ID回填）
+            int insertResult = sqlTemplateMapper.insertTemplate(template);
+            if (insertResult <= 0) {
+                throw new RuntimeException("Failed to insert template");
+            }
+
+            // 验证ID是否正确回填
+            if (template.getTemplateId() == null) {
+                throw new RuntimeException("Template ID was not generated properly");
+            }
+
+            log.info("Template created with ID: {}", template.getTemplateId());
+
+            // 保存参数（如果有）
+            if (template.getParameters() != null && !template.getParameters().isEmpty()) {
+                saveParameters(template.getTemplateId(), template.getParameters());
+                log.info("Saved {} parameters for template {}", template.getParameters().size(), template.getTemplateId());
+            }
+
+            // 创建初始版本
+            createInitialVersion(template);
+            log.info("Created initial version for template {}", template.getTemplateId());
+
+            return template;
+
+        } catch (Exception e) {
+            log.error("Failed to create template: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create template: " + e.getMessage(), e);
         }
-        
-        sqlTemplateMapper.insert(template);
-        
-        if (template.getParameters() != null && !template.getParameters().isEmpty()) {
-            saveParameters(template.getTemplateId(), template.getParameters());
-        }
-        
-        createInitialVersion(template);
-        
-        return template;
     }
 
     @Override
     @Transactional
     public SqlTemplate updateTemplate(SqlTemplate template) {
-        SqlTemplate existingTemplate = sqlTemplateMapper.selectById(template.getTemplateId());
+        SqlTemplate existingTemplate = sqlTemplateMapper.selectByIdWithUserInfo(template.getTemplateId());
         if (existingTemplate == null) {
             throw new RuntimeException("Template not found");
         }
         
         template.setUpdatedTime(LocalDateTime.now());
+        String newHash = generateTemplateHash(template.getTemplateContent());
         
         if (template.getTemplateContent() != null) {
-            String newHash = generateTemplateHash(template.getTemplateContent());
             if (!newHash.equals(existingTemplate.getTemplateHash())) {
                 template.setTemplateHash(newHash);
                 template.setApprovalStatus("PENDING");
@@ -79,7 +103,7 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
             }
         }
         
-        sqlTemplateMapper.updateById(template);
+        sqlTemplateMapper.updateTemplateToNewVersion(template);
         
         if (template.getParameters() != null) {
             parameterMapper.deleteByTemplateId(template.getTemplateId());
@@ -405,7 +429,12 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
         version.setValidationStatus("PENDING");
         version.setApprovalStatus("PENDING");
         
-        versionMapper.insert(version);
+        int insertResult = versionMapper.insertVersion(version);
+        if (insertResult <= 0) {
+            throw new RuntimeException("Failed to create initial version");
+        }
+
+        log.info("Created initial version {} for template {}", version.getVersionNumber(), template.getTemplateId());
     }
 
     private void createNewVersion(SqlTemplate template, SqlTemplate existingTemplate) {
@@ -432,7 +461,12 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
             version.setParentVersionId(currentVersion.getVersionId());
         }
         
-        versionMapper.insert(version);
+        int insertResult = versionMapper.insertVersion(version);
+        if (insertResult <= 0) {
+            throw new RuntimeException("Failed to create new version");
+        }
+
+        log.info("Created new version {} for template {}", version.getVersionNumber(), template.getTemplateId());
     }
 
     private String guessParameterType(String paramName) {
