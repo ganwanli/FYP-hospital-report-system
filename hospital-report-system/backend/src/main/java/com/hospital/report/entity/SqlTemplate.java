@@ -89,6 +89,12 @@ public class SqlTemplate {
     @TableField("last_used_time")
     private LocalDateTime lastUsedTime;
 
+    @TableField("modification_note")
+    private String modificationNote;
+
+    @TableField("change_log")
+    private String changeLog;
+
     @TableField(exist = false)
     private List<SqlTemplateParameter> parameters;
 

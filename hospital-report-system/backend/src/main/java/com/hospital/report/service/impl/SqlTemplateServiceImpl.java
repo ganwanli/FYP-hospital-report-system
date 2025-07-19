@@ -94,7 +94,11 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
         
         template.setUpdatedTime(LocalDateTime.now());
         String newHash = generateTemplateHash(template.getTemplateContent());
-        
+
+        Integer maxVersion = versionMapper.selectMaxVersionNumber(template.getTemplateId());
+        String newVersionNumber = "v" + (maxVersion != null ? maxVersion + 1 : 1) + ".0";
+        template.setTemplateVersion(newVersionNumber);
+
         if (template.getTemplateContent() != null) {
             if (!newHash.equals(existingTemplate.getTemplateHash())) {
                 template.setTemplateHash(newHash);
@@ -120,8 +124,9 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
     public void deleteTemplate(Long templateId) {
         parameterMapper.deleteByTemplateId(templateId);
         versionMapper.deleteByTemplateId(templateId);
-        usageLogMapper.deleteByTemplateId(templateId);
-        sqlTemplateMapper.deleteById(templateId);
+        //暂时删除此功能，此表不存在
+//        usageLogMapper.deleteByTemplateId(templateId);
+        sqlTemplateMapper.deleteSqlTemplateById(templateId);
     }
 
     @Override
@@ -438,29 +443,28 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
     }
 
     private void createNewVersion(SqlTemplate template, SqlTemplate existingTemplate) {
-        Integer maxVersion = versionMapper.selectMaxVersionNumber(template.getTemplateId());
-        String newVersionNumber = "v" + (maxVersion != null ? maxVersion + 1 : 1) + ".0";
-        
+
         versionMapper.clearCurrentVersion(template.getTemplateId());
         
         SqlTemplateVersion version = new SqlTemplateVersion();
         version.setTemplateId(template.getTemplateId());
-        version.setVersionNumber(newVersionNumber);
+        version.setVersionNumber(template.getTemplateVersion());
         version.setVersionDescription("Template updated");
         version.setTemplateContent(template.getTemplateContent());
-        version.setChangeLog("Template content updated");
+        version.setChangeLog(template.getChangeLog());
         version.setIsCurrent(true);
         version.setCreatedBy(template.getUpdatedBy());
         version.setCreatedTime(LocalDateTime.now());
         version.setTemplateHash(template.getTemplateHash());
         version.setValidationStatus("PENDING");
         version.setApprovalStatus("PENDING");
+        version.setModificationNote(template.getModificationNote());
         
         SqlTemplateVersion currentVersion = versionMapper.selectCurrentVersion(template.getTemplateId());
         if (currentVersion != null) {
             version.setParentVersionId(currentVersion.getVersionId());
         }
-        
+
         int insertResult = versionMapper.insertVersion(version);
         if (insertResult <= 0) {
             throw new RuntimeException("Failed to create new version");

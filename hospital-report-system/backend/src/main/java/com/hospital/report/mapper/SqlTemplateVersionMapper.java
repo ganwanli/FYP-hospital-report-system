@@ -13,12 +13,12 @@ public interface SqlTemplateVersionMapper extends BaseMapper<SqlTemplateVersion>
             "template_id, version_number, version_description, template_content, " +
             "change_log, is_current, created_by, created_time, " +
             "template_hash, parent_version_id, validation_status, validation_message, " +
-            "approval_status, approved_by, approved_time" +
+            "approval_status, approved_by, approved_time, modification_note" +
             ") VALUES (" +
             "#{templateId}, #{versionNumber}, #{versionDescription}, #{templateContent}, " +
             "#{changeLog}, #{isCurrent}, #{createdBy}, #{createdTime}, " +
             "#{templateHash}, #{parentVersionId}, #{validationStatus}, #{validationMessage}, " +
-            "#{approvalStatus}, #{approvedBy}, #{approvedTime}" +
+            "#{approvalStatus}, #{approvedBy}, #{approvedTime}, #{modificationNote}" +
             ")")
     @Options(useGeneratedKeys = true, keyProperty = "versionId", keyColumn = "version_id")
     int insertVersion(SqlTemplateVersion version);
@@ -46,7 +46,7 @@ public interface SqlTemplateVersionMapper extends BaseMapper<SqlTemplateVersion>
     @Select("SELECT COUNT(*) FROM sql_template_version WHERE template_id = #{templateId}")
     int countByTemplateId(@Param("templateId") Long templateId);
 
-    @Select("SELECT MAX(CAST(SUBSTRING(version_number, 3) AS UNSIGNED)) FROM sql_template_version WHERE template_id = #{templateId} AND version_number LIKE 'v%'")
+    @Select("SELECT MAX(CAST(SUBSTRING(version_number, 2) AS UNSIGNED)) FROM sql_template_version WHERE template_id = #{templateId} AND version_number LIKE 'v%'")
     Integer selectMaxVersionNumber(@Param("templateId") Long templateId);
 
     @Delete("DELETE FROM sql_template_version WHERE template_id = #{templateId}")

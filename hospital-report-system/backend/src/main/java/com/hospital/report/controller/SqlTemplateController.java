@@ -5,6 +5,7 @@ import com.hospital.report.entity.SqlTemplate;
 import com.hospital.report.service.SqlTemplateService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class SqlTemplateController {
     private final SqlTemplateService sqlTemplateService;
 
     @PostMapping
+    @Operation(summary = "创建SQL模板", description = "创建新的SQL模板")
     public Result<SqlTemplate> createTemplate(@RequestBody SqlTemplate template) {
         try {
             SqlTemplate created = sqlTemplateService.createTemplate(template);
@@ -31,6 +33,7 @@ public class SqlTemplateController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "更新SQL模板", description = "更新指定的SQL模板")
     public Result<SqlTemplate> updateTemplate(@PathVariable Long id, @RequestBody SqlTemplate template) {
         try {
             template.setTemplateId(id);
@@ -42,6 +45,7 @@ public class SqlTemplateController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "删除SQL模板", description = "删除指定的SQL模板")
     public Result<Void> deleteTemplate(@PathVariable Long id) {
         try {
             sqlTemplateService.deleteTemplate(id);
@@ -52,6 +56,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "获取SQL模板", description = "根据ID获取指定的SQL模板")
     public Result<SqlTemplate> getTemplate(@PathVariable Long id) {
         try {
             SqlTemplate template = sqlTemplateService.getTemplateById(id);
@@ -66,6 +71,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping
+    @Operation(summary = "获取SQL模板列表", description = "分页查询SQL模板列表，支持多种筛选条件")
     public Result<IPage<SqlTemplate>> getTemplateList(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
@@ -88,6 +94,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/search")
+    @Operation(summary = "搜索SQL模板", description = "根据关键词搜索SQL模板")
     public Result<List<SqlTemplate>> searchTemplates(@RequestParam String keyword) {
         try {
             List<SqlTemplate> templates = sqlTemplateService.searchTemplates(keyword);
@@ -98,6 +105,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/popular")
+    @Operation(summary = "获取热门SQL模板", description = "获取使用次数最多的SQL模板")
     public Result<List<SqlTemplate>> getPopularTemplates(@RequestParam(defaultValue = "10") Integer limit) {
         try {
             List<SqlTemplate> templates = sqlTemplateService.getPopularTemplates(limit);
@@ -108,6 +116,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/recent")
+    @Operation(summary = "获取用户最近使用的SQL模板", description = "获取指定用户最近使用的SQL模板")
     public Result<List<SqlTemplate>> getUserRecentTemplates(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "10") Integer limit) {
@@ -120,6 +129,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/categories")
+    @Operation(summary = "获取所有分类", description = "获取所有SQL模板分类")
     public Result<List<String>> getAllCategories() {
         try {
             List<String> categories = sqlTemplateService.getAllCategories();
@@ -130,6 +140,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/database-types")
+    @Operation(summary = "获取所有数据库类型", description = "获取所有支持的数据库类型")
     public Result<List<String>> getAllDatabaseTypes() {
         try {
             List<String> types = sqlTemplateService.getAllDatabaseTypes();
@@ -140,6 +151,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/tags")
+    @Operation(summary = "获取所有标签", description = "获取所有SQL模板标签")
     public Result<List<String>> getAllTags() {
         try {
             List<String> tags = sqlTemplateService.getAllTags();
@@ -150,6 +162,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/statistics")
+    @Operation(summary = "获取模板统计信息", description = "获取SQL模板的整体统计信息")
     public Result<Map<String, Object>> getTemplateStatistics() {
         try {
             Map<String, Object> stats = sqlTemplateService.getTemplateStatistics();
@@ -160,6 +173,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/statistics/category")
+    @Operation(summary = "获取分类统计", description = "获取各分类的SQL模板数量统计")
     public Result<List<Map<String, Object>>> getCategoryStatistics() {
         try {
             List<Map<String, Object>> stats = sqlTemplateService.getCategoryStatistics();
@@ -170,6 +184,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/statistics/database-type")
+    @Operation(summary = "获取数据库类型统计", description = "获取各数据库类型的SQL模板数量统计")
     public Result<List<Map<String, Object>>> getDatabaseTypeStatistics() {
         try {
             List<Map<String, Object>> stats = sqlTemplateService.getDatabaseTypeStatistics();
@@ -180,6 +195,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/statistics/monthly")
+    @Operation(summary = "获取月度创建统计", description = "获取SQL模板的月度创建数量统计")
     public Result<List<Map<String, Object>>> getMonthlyCreationStatistics() {
         try {
             List<Map<String, Object>> stats = sqlTemplateService.getMonthlyCreationStatistics();
@@ -190,6 +206,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/{id}/approve")
+    @Operation(summary = "审批通过SQL模板", description = "审批通过指定的SQL模板")
     public Result<Void> approveTemplate(@PathVariable Long id, @RequestParam Long approvedBy) {
         try {
             sqlTemplateService.approveTemplate(id, approvedBy);
@@ -200,6 +217,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/{id}/reject")
+    @Operation(summary = "审批拒绝SQL模板", description = "审批拒绝指定的SQL模板")
     public Result<Void> rejectTemplate(@PathVariable Long id, @RequestParam Long approvedBy) {
         try {
             sqlTemplateService.rejectTemplate(id, approvedBy);
@@ -210,6 +228,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/pending-approval")
+    @Operation(summary = "获取待审批模板", description = "获取所有待审批的SQL模板")
     public Result<List<SqlTemplate>> getPendingApprovalTemplates() {
         try {
             List<SqlTemplate> templates = sqlTemplateService.getPendingApprovalTemplates();
@@ -220,6 +239,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/validate")
+    @Operation(summary = "验证SQL模板", description = "验证SQL模板的语法正确性")
     public Result<String> validateTemplate(@RequestBody Map<String, String> request) {
         try {
             String templateContent = request.get("templateContent");
@@ -237,6 +257,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/extract-parameters")
+    @Operation(summary = "提取SQL参数", description = "从SQL模板中提取参数信息")
     public Result<List<com.hospital.report.entity.SqlTemplateParameter>> extractParameters(@RequestBody Map<String, String> request) {
         try {
             String templateContent = request.get("templateContent");
@@ -248,6 +269,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/{id}/duplicate")
+    @Operation(summary = "复制SQL模板", description = "复制指定的SQL模板并创建新模板")
     public Result<SqlTemplate> duplicateTemplate(@PathVariable Long id, @RequestParam String newName) {
         try {
             SqlTemplate duplicated = sqlTemplateService.duplicateTemplate(id, newName);
@@ -258,6 +280,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/category/{category}")
+    @Operation(summary = "按分类获取模板", description = "获取指定分类的所有SQL模板")
     public Result<List<SqlTemplate>> getTemplatesByCategory(@PathVariable String category) {
         try {
             List<SqlTemplate> templates = sqlTemplateService.getTemplatesByCategory(category);
@@ -268,6 +291,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/database-type/{databaseType}")
+    @Operation(summary = "按数据库类型获取模板", description = "获取指定数据库类型的所有SQL模板")
     public Result<List<SqlTemplate>> getTemplatesByDatabaseType(@PathVariable String databaseType) {
         try {
             List<SqlTemplate> templates = sqlTemplateService.getTemplatesByDatabaseType(databaseType);
@@ -278,6 +302,7 @@ public class SqlTemplateController {
     }
 
     @PutMapping("/bulk/status")
+    @Operation(summary = "批量更新模板状态", description = "批量更新SQL模板的激活状态")
     public Result<Void> bulkUpdateTemplateStatus(@RequestBody Map<String, Object> request) {
         try {
             @SuppressWarnings("unchecked")
@@ -292,6 +317,7 @@ public class SqlTemplateController {
     }
 
     @DeleteMapping("/bulk")
+    @Operation(summary = "批量删除模板", description = "批量删除指定的SQL模板")
     public Result<Void> bulkDeleteTemplates(@RequestBody Map<String, Object> request) {
         try {
             @SuppressWarnings("unchecked")
@@ -305,6 +331,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/{id}/usage-statistics")
+    @Operation(summary = "获取模板使用统计", description = "获取指定SQL模板的使用统计信息")
     public Result<Map<String, Object>> getTemplateUsageStatistics(@PathVariable Long id) {
         try {
             Map<String, Object> stats = sqlTemplateService.getTemplateUsageStatistics(id);
@@ -315,6 +342,7 @@ public class SqlTemplateController {
     }
 
     @GetMapping("/{id}/usage-history")
+    @Operation(summary = "获取模板使用历史", description = "获取指定SQL模板的使用历史记录")
     public Result<List<Map<String, Object>>> getTemplateUsageHistory(
             @PathVariable Long id,
             @RequestParam(defaultValue = "30") Integer days) {
@@ -327,6 +355,7 @@ public class SqlTemplateController {
     }
 
     @PostMapping("/{id}/usage")
+    @Operation(summary = "更新使用次数", description = "更新指定SQL模板的使用次数")
     public Result<Void> updateUsageCount(@PathVariable Long id) {
         try {
             sqlTemplateService.updateUsageCount(id);

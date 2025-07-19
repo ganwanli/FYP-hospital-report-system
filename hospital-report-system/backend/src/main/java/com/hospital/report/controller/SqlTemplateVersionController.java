@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/sql-template-versions")
+@RequestMapping("/sql-template-versions")
 @RequiredArgsConstructor
 @Tag(name = "SQL模板版本管理", description = "SQL模板版本相关接口")
 public class SqlTemplateVersionController {

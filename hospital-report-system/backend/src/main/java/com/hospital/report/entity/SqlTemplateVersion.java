@@ -61,6 +61,9 @@ public class SqlTemplateVersion {
     @TableField("approved_time")
     private LocalDateTime approvedTime;
 
+    @TableField("modification_note")
+    private String modificationNote;
+
     @TableField(exist = false)
     private String createdByName;
 

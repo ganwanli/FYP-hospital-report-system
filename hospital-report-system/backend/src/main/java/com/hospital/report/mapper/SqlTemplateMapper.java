@@ -149,4 +149,7 @@ public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
             "ORDER BY usage_count DESC, updated_time DESC " +
             "</script>")
     List<SqlTemplate> searchTemplates(@Param("keyword") String keyword);
+
+    @Delete("DELETE FROM sql_template WHERE template_id = #{templateId}")
+    int deleteSqlTemplateById(@Param("templateId") Long templateId);
 }
