@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hospital.report.dto.*;
 import com.hospital.report.entity.DictCategory;
+import com.hospital.report.entity.DictField;
 import com.hospital.report.exception.BusinessException;
 import com.hospital.report.mapper.DictCategoryMapper;
+import com.hospital.report.mapper.DictFieldMapper;
 import com.hospital.report.service.DictCategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 public class DictCategoryServiceImpl extends ServiceImpl<DictCategoryMapper, DictCategory> implements DictCategoryService {
 
     private final DictCategoryMapper dictCategoryMapper;
+    private final DictFieldMapper dictFieldMapper;
 
     @Override
     @Cacheable(value = "dict:category:tree", key = "'all'")
@@ -474,20 +477,9 @@ public class DictCategoryServiceImpl extends ServiceImpl<DictCategoryMapper, Dic
         vo.setFieldCount(category.getFieldCount());
         vo.setParentName(category.getParentName());
 
-        // 构建分类路径
-        if (category.getParentId() != null && category.getParentId() != 0) {
-            try {
-                List<DictCategoryVO> path = getCategoryPath(category.getId());
-                String categoryPath = path.stream()
-                        .map(DictCategoryVO::getCategoryName)
-                        .collect(Collectors.joining(" / "));
-                vo.setCategoryPath(categoryPath);
-            } catch (Exception e) {
-                vo.setCategoryPath(category.getCategoryName());
-            }
-        } else {
-            vo.setCategoryPath(category.getCategoryName());
-        }
+        // 构建分类路径 - 简化版本，避免递归查询
+        // 暂时只设置当前分类名称，避免复杂的路径查询导致异常
+        vo.setCategoryPath(category.getCategoryName());
 
         return vo;
     }
@@ -506,6 +498,191 @@ public class DictCategoryServiceImpl extends ServiceImpl<DictCategoryMapper, Dic
         // 设置额外属性
         treeVO.setHasChildren(category.getHasChildren());
         treeVO.setFieldCount(category.getFieldCount());
+
+        return treeVO;
+    }
+
+    @Override
+    // @Cacheable(value = "dict:category:field:tree", key = "'all'")
+    public List<CategoryFieldTreeVO> getCategoryFieldTree() {
+        log.info("获取完整分类字段混合树");
+
+        // 获取所有分类
+        List<DictCategory> categories = dictCategoryMapper.selectAllWithHierarchy();
+
+        // 获取所有字段
+        List<DictField> fields = dictFieldMapper.selectAllFields();
+
+        return buildCategoryFieldTree(categories, fields);
+    }
+
+    @Override
+    // @Cacheable(value = "dict:category:field:tree", key = "'enabled'")
+    public List<CategoryFieldTreeVO> getEnabledCategoryFieldTree() {
+        log.info("获取启用的分类字段混合树");
+
+        // 获取启用的分类
+        LambdaQueryWrapper<DictCategory> categoryWrapper = new LambdaQueryWrapper<>();
+        categoryWrapper.eq(DictCategory::getStatus, 1)
+                .orderByAsc(DictCategory::getCategoryLevel)
+                .orderByAsc(DictCategory::getSortOrder)
+                .orderByAsc(DictCategory::getCreateTime);
+        List<DictCategory> categories = list(categoryWrapper);
+
+        // 获取启用的字段
+        LambdaQueryWrapper<DictField> fieldWrapper = new LambdaQueryWrapper<>();
+        fieldWrapper.eq(DictField::getStatus, 1)
+                .orderByAsc(DictField::getSortOrder)
+                .orderByAsc(DictField::getCreatedTime);
+        List<DictField> fields = dictFieldMapper.selectList(fieldWrapper);
+
+        return buildCategoryFieldTree(categories, fields);
+    }
+
+    /**
+     * 构建分类字段混合树
+     */
+    private List<CategoryFieldTreeVO> buildCategoryFieldTree(List<DictCategory> categories, List<DictField> fields) {
+        if (CollectionUtils.isEmpty(categories)) {
+            return new ArrayList<>();
+        }
+
+        // 按父级ID分组分类
+        Map<Long, List<DictCategory>> categoryMap = categories.stream()
+                .collect(Collectors.groupingBy(DictCategory::getParentId));
+
+        // 按分类ID分组字段
+        Map<Long, List<DictField>> fieldMap = fields.stream()
+                .collect(Collectors.groupingBy(DictField::getCategoryId));
+
+        // 构建树形结构
+        return buildCategoryFieldTreeRecursive(categoryMap, fieldMap, 0L);
+    }
+
+    /**
+     * 递归构建分类字段混合树
+     */
+    private List<CategoryFieldTreeVO> buildCategoryFieldTreeRecursive(
+            Map<Long, List<DictCategory>> categoryMap,
+            Map<Long, List<DictField>> fieldMap,
+            Long parentId) {
+
+        List<CategoryFieldTreeVO> result = new ArrayList<>();
+
+        // 获取当前层级的分类
+        List<DictCategory> currentCategories = categoryMap.get(parentId);
+        if (CollectionUtils.isEmpty(currentCategories)) {
+            return result;
+        }
+
+        for (DictCategory category : currentCategories) {
+            // 创建分类节点
+            CategoryFieldTreeVO categoryNode = convertToCategoryFieldTreeVO(category);
+
+            // 递归构建子分类
+            List<CategoryFieldTreeVO> childCategories = buildCategoryFieldTreeRecursive(
+                    categoryMap, fieldMap, category.getId());
+
+            // 添加该分类下的字段作为叶子节点
+            List<DictField> categoryFields = fieldMap.get(category.getId());
+            List<CategoryFieldTreeVO> fieldNodes = new ArrayList<>();
+            if (!CollectionUtils.isEmpty(categoryFields)) {
+                fieldNodes = categoryFields.stream()
+                        .sorted(Comparator.comparing(DictField::getSortOrder)
+                                .thenComparing(DictField::getCreatedTime))
+                        .map(this::convertToFieldTreeVO)
+                        .collect(Collectors.toList());
+            }
+
+            // 合并子节点（先子分类，后字段）
+            List<CategoryFieldTreeVO> allChildren = new ArrayList<>();
+            allChildren.addAll(childCategories);
+            allChildren.addAll(fieldNodes);
+
+            if (!allChildren.isEmpty()) {
+                categoryNode.setChildren(allChildren);
+                categoryNode.setHasChildren(true);
+                categoryNode.setIsLeaf(false);
+            }
+
+            // 设置字段数量
+            categoryNode.setFieldCount(fieldNodes.size());
+            categoryNode.setTreeProperties();
+
+            result.add(categoryNode);
+        }
+
+        List<CategoryFieldTreeVO> sortedResult = result.stream()
+                .sorted(Comparator.comparing(CategoryFieldTreeVO::getSortOrder)
+                        .thenComparing(CategoryFieldTreeVO::getCreateTime))
+                .collect(Collectors.toList());
+        return sortedResult;
+    }
+
+    /**
+     * 转换分类为分类字段树VO
+     */
+    private CategoryFieldTreeVO convertToCategoryFieldTreeVO(DictCategory category) {
+        if (category == null) {
+            return null;
+        }
+
+        CategoryFieldTreeVO treeVO = new CategoryFieldTreeVO();
+        treeVO.setId(category.getId());
+        treeVO.setNodeType("category");
+        treeVO.setCode(category.getCategoryCode());
+        treeVO.setName(category.getCategoryName());
+        treeVO.setParentId(category.getParentId());
+        treeVO.setLevel(category.getCategoryLevel());
+        treeVO.setSortOrder(category.getSortOrder());
+        treeVO.setIcon(category.getIcon());
+        treeVO.setDescription(category.getDescription());
+        treeVO.setStatus(category.getStatus());
+        treeVO.setCreateTime(category.getCreateTime());
+        treeVO.setUpdateTime(category.getUpdateTime());
+        treeVO.setCreateBy(category.getCreateBy());
+        treeVO.setUpdateBy(category.getUpdateBy());
+
+        return treeVO;
+    }
+
+    /**
+     * 转换字段为分类字段树VO
+     */
+    private CategoryFieldTreeVO convertToFieldTreeVO(DictField field) {
+        if (field == null) {
+            return null;
+        }
+
+        CategoryFieldTreeVO treeVO = new CategoryFieldTreeVO();
+        treeVO.setId(field.getId());
+        treeVO.setNodeType("field");
+        treeVO.setCode(field.getFieldCode());
+        treeVO.setName(field.getFieldName());
+        treeVO.setNameEn(field.getFieldNameEn());
+        treeVO.setCategoryId(field.getCategoryId());
+        treeVO.setSortOrder(field.getSortOrder());
+        treeVO.setDescription(field.getDescription());
+        treeVO.setStatus(field.getStatus());
+        treeVO.setDataType(field.getDataType());
+        treeVO.setDataLength(field.getDataLength());
+        treeVO.setSourceDatabase(field.getSourceDatabase());
+        treeVO.setSourceTable(field.getSourceTable());
+        treeVO.setSourceField(field.getSourceField());
+        treeVO.setFilterCondition(field.getFilterCondition());
+        treeVO.setCalculationSql(field.getCalculationSql());
+        treeVO.setUpdateFrequency(field.getUpdateFrequency());
+        treeVO.setDataOwner(field.getDataOwner());
+        treeVO.setRemark(field.getRemark());
+        treeVO.setCreateTime(field.getCreatedTime());
+        treeVO.setUpdateTime(field.getUpdatedTime());
+        treeVO.setCreateBy(field.getCreatedBy());
+        treeVO.setUpdateBy(field.getUpdatedBy());
+
+        // 字段节点是叶子节点
+        treeVO.setHasChildren(false);
+        treeVO.setIsLeaf(true);
+        treeVO.setTreeProperties();
 
         return treeVO;
     }

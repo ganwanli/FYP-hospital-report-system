@@ -56,7 +56,6 @@ public class DictCategory implements Serializable {
      * 父级分类ID，0表示顶级
      */
     @TableField("parent_id")
-    @NotNull(message = "父级分类ID不能为空")
     @Schema(description = "父级分类ID，0表示顶级", example = "0")
     private Long parentId;
 
@@ -126,6 +125,7 @@ public class DictCategory implements Serializable {
     @Schema(description = "更新人")
     private String updateBy;
 
+    // 扩展字段（不存储在数据库中）
     /**
      * 子分类列表（用于树形结构）
      */
@@ -175,7 +175,7 @@ public class DictCategory implements Serializable {
 
     /**
      * 判断是否为顶级分类
-     * 
+     *
      * @return true-顶级分类，false-非顶级分类
      */
     public boolean isTopLevel() {
@@ -184,7 +184,7 @@ public class DictCategory implements Serializable {
 
     /**
      * 判断是否启用
-     * 
+     *
      * @return true-启用，false-禁用
      */
     public boolean isEnabled() {
@@ -207,7 +207,7 @@ public class DictCategory implements Serializable {
 
     /**
      * 计算分类层级
-     * 
+     *
      * @param parentLevel 父级层级
      */
     public void calculateLevel(Integer parentLevel) {

@@ -146,12 +146,28 @@ public interface DictCategoryService extends IService<DictCategory> {
 
     /**
      * 构建分类树（指定根节点）
-     * 
+     *
      * @param categories 分类列表
      * @param parentId 父级分类ID
      * @return 分类树
      */
     List<CategoryTreeVO> buildCategoryTree(List<DictCategory> categories, Long parentId);
+
+    /**
+     * 获取分类字段混合树
+     * 分类作为分支节点，字段作为叶子节点
+     *
+     * @return 分类字段混合树
+     */
+    List<CategoryFieldTreeVO> getCategoryFieldTree();
+
+    /**
+     * 获取启用的分类字段混合树
+     * 分类作为分支节点，字段作为叶子节点
+     *
+     * @return 启用的分类字段混合树
+     */
+    List<CategoryFieldTreeVO> getEnabledCategoryFieldTree();
 
     /**
      * 验证分类是否可以删除

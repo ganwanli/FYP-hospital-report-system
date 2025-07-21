@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hospital.report.common.Result;
 import com.hospital.report.dto.*;
 import com.hospital.report.service.DictCategoryService;
+import com.hospital.report.service.DictFieldService;
+import com.hospital.report.entity.DictField;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据字典分类控制器
@@ -26,13 +29,14 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/dict/category")
+@RequestMapping("/dict/category")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "数据字典分类管理", description = "数据字典分类的增删改查和树形结构管理")
 public class DictCategoryController {
 
     private final DictCategoryService dictCategoryService;
+    private final DictFieldService dictFieldService;
 
     /**
      * 获取分类树
@@ -53,6 +57,28 @@ public class DictCategoryController {
     public Result<List<CategoryTreeVO>> getEnabledCategoryTree() {
         log.info("获取启用的分类树");
         List<CategoryTreeVO> tree = dictCategoryService.getEnabledCategoryTree();
+        return Result.success(tree);
+    }
+
+    /**
+     * 获取分类字段混合树
+     */
+    @GetMapping("/field-tree")
+    @Operation(summary = "获取分类字段混合树", description = "获取分类作为分支节点，字段作为叶子节点的完整树形结构")
+    public Result<List<CategoryFieldTreeVO>> getCategoryFieldTree() {
+        log.info("获取分类字段混合树");
+        List<CategoryFieldTreeVO> tree = dictCategoryService.getCategoryFieldTree();
+        return Result.success(tree);
+    }
+
+    /**
+     * 获取启用的分类字段混合树
+     */
+    @GetMapping("/field-tree/enabled")
+    @Operation(summary = "获取启用的分类字段混合树", description = "获取只包含启用状态的分类字段混合树形结构")
+    public Result<List<CategoryFieldTreeVO>> getEnabledCategoryFieldTree() {
+        log.info("获取启用的分类字段混合树");
+        List<CategoryFieldTreeVO> tree = dictCategoryService.getEnabledCategoryFieldTree();
         return Result.success(tree);
     }
 
@@ -244,5 +270,108 @@ public class DictCategoryController {
         log.info("刷新分类缓存");
         dictCategoryService.refreshCategoryCache();
         return Result.success(true);
+    }
+
+    /**
+     * 新增字段
+     */
+    @PostMapping("/field")
+    @Operation(summary = "新增字段", description = "在指定分类下创建新的字段")
+    public Result<DictField> createField(@RequestBody Map<String, Object> requestData) {
+        try {
+            log.info("新增字段请求数据：{}", requestData);
+
+            // 创建DictField对象并设置字段值
+            DictField dictField = new DictField();
+
+            // 基本字段映射
+            if (requestData.get("categoryId") != null) {
+                dictField.setCategoryId(Long.valueOf(requestData.get("categoryId").toString()));
+            }
+            if (requestData.get("code") != null) {
+                dictField.setFieldCode(requestData.get("code").toString());
+            }
+            if (requestData.get("name") != null) {
+                dictField.setFieldName(requestData.get("name").toString());
+            }
+            if (requestData.get("nameEn") != null) {
+                dictField.setFieldNameEn(requestData.get("nameEn").toString());
+            }
+            if (requestData.get("description") != null) {
+                dictField.setDescription(requestData.get("description").toString());
+            }
+            if (requestData.get("dataType") != null) {
+                dictField.setDataType(requestData.get("dataType").toString());
+            }
+            if (requestData.get("dataLength") != null) {
+                dictField.setDataLength(requestData.get("dataLength").toString());
+            }
+            if (requestData.get("sourceDatabase") != null) {
+                dictField.setSourceDatabase(requestData.get("sourceDatabase").toString());
+            }
+            if (requestData.get("sourceTable") != null) {
+                dictField.setSourceTable(requestData.get("sourceTable").toString());
+            }
+            if (requestData.get("sourceField") != null) {
+                dictField.setSourceField(requestData.get("sourceField").toString());
+            }
+            if (requestData.get("filterCondition") != null) {
+                dictField.setFilterCondition(requestData.get("filterCondition").toString());
+            }
+            if (requestData.get("calculationSql") != null) {
+                dictField.setCalculationSql(requestData.get("calculationSql").toString());
+            }
+            if (requestData.get("updateFrequency") != null) {
+                dictField.setUpdateFrequency(requestData.get("updateFrequency").toString());
+            }
+            if (requestData.get("dataOwner") != null) {
+                dictField.setDataOwner(requestData.get("dataOwner").toString());
+            }
+            if (requestData.get("remark") != null) {
+                dictField.setRemark(requestData.get("remark").toString());
+            }
+            if (requestData.get("nodeType") != null) {
+                dictField.setNodeType(requestData.get("nodeType").toString());
+            }
+            if (requestData.get("status") != null) {
+                dictField.setStatus(Integer.valueOf(requestData.get("status").toString()));
+            }
+
+            // 验证必要字段
+            if (dictField.getCategoryId() == null) {
+                return Result.error("分类ID不能为空");
+            }
+            if (dictField.getFieldCode() == null || dictField.getFieldCode().trim().isEmpty()) {
+                return Result.error("字段编码不能为空");
+            }
+            if (dictField.getFieldName() == null || dictField.getFieldName().trim().isEmpty()) {
+                return Result.error("字段名称不能为空");
+            }
+
+            // 设置默认值
+            if (dictField.getNodeType() == null) {
+                dictField.setNodeType("field");
+            }
+            if (dictField.getStatus() == null) {
+                dictField.setStatus(1);
+            }
+
+            log.info("映射后的字段对象：{}", dictField);
+
+            // 调用服务创建字段
+            boolean success = dictFieldService.createDictField(dictField);
+
+            if (success) {
+                // 刷新缓存
+                dictCategoryService.refreshCategoryCache();
+                return Result.success(dictField);
+            } else {
+                return Result.error("创建字段失败");
+            }
+
+        } catch (Exception e) {
+            log.error("创建字段失败", e);
+            return Result.error("系统异常：" + e.getMessage());
+        }
     }
 }
