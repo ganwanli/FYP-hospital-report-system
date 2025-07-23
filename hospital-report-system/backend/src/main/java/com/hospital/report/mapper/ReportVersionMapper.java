@@ -12,7 +12,7 @@ public interface ReportVersionMapper extends BaseMapper<ReportVersion> {
 
     @Select("SELECT v.*, u1.username as created_by_name " +
             "FROM report_version v " +
-            "LEFT JOIN user u1 ON v.created_by = u1.user_id " +
+            "LEFT JOIN sys_user u1 ON v.created_by = u1.id " +
             "WHERE v.report_id = #{reportId} " +
             "ORDER BY v.created_time DESC")
     List<Map<String, Object>> selectByReportIdWithUserInfo(@Param("reportId") Long reportId);

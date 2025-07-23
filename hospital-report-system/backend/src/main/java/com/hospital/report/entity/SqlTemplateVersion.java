@@ -28,6 +28,9 @@ public class SqlTemplateVersion {
     @TableField("template_content")
     private String templateContent;
 
+    @TableField("datasource_id")
+    private Long dataSourceId;
+
     @TableField("change_log")
     private String changeLog;
 

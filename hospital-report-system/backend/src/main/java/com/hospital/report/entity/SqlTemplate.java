@@ -32,6 +32,9 @@ public class SqlTemplate {
     @TableField("template_version")
     private String templateVersion;
 
+    @TableField("datasource_id")
+    private Long datasourceId;
+
     @TableField("database_type")
     private String databaseType;
 

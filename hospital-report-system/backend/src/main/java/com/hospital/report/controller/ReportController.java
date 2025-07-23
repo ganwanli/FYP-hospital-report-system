@@ -1,6 +1,7 @@
 package com.hospital.report.controller;
 
 import com.hospital.report.common.Result;
+import com.hospital.report.dto.ReportConfigDTO;
 import com.hospital.report.entity.ReportConfig;
 import com.hospital.report.entity.ReportComponent;
 import com.hospital.report.entity.ReportDataSource;
@@ -9,6 +10,7 @@ import com.hospital.report.service.ReportDataService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,18 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/reports")
+@RestController   //按口方法返回矿象 转换成json文本
+@RequestMapping("/report")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ReportController {
 
-    private final ReportConfigService reportConfigService;
+//    private final ReportConfigService reportConfigService;
     private final ReportDataService reportDataService;
+    @Autowired
+    private ReportConfigService reportConfigService;
 
     // Report CRUD operations
     @PostMapping
-    public Result<ReportConfig> createReport(@RequestBody ReportConfig reportConfig) {
+    public Result<ReportConfig> createReport(@RequestBody ReportConfigDTO reportConfig) {
         try {
             ReportConfig created = reportConfigService.createReport(reportConfig);
             return Result.success(created);
@@ -40,7 +44,7 @@ public class ReportController {
     @PutMapping("/{id}")
     public Result<ReportConfig> updateReport(@PathVariable Long id, @RequestBody ReportConfig reportConfig) {
         try {
-            reportConfig.setReportId(id);
+            reportConfig.setId(id);
             ReportConfig updated = reportConfigService.updateReport(reportConfig);
             return Result.success(updated);
         } catch (Exception e) {
@@ -72,6 +76,28 @@ public class ReportController {
         }
     }
 
+    @GetMapping("/list")
+    public Result<IPage<ReportConfig>> getReportList(
+            @RequestParam(defaultValue = "1") Integer current,
+            @RequestParam(defaultValue = "100") Integer size,
+            @RequestParam(required = false) String reportName,
+            @RequestParam(required = false) String reportCategory,
+            @RequestParam(required = false) String reportType,
+            @RequestParam(required = false) Boolean isPublished,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Long createdBy,
+            @RequestParam(required = false) String accessLevel) {
+        try {
+            Page<ReportConfig> pageObj = new Page<>(current, size);
+            IPage<ReportConfig> result = reportConfigService.getReportList(pageObj, reportName, reportCategory,
+                    reportType, isPublished, isActive, createdBy, accessLevel);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("Failed to get report list: " + e.getMessage());
+        }
+    }
+
+    /**
     @GetMapping("/{id}/full")
     public Result<ReportConfig> getReportWithComponents(@PathVariable Long id) {
         try {
@@ -86,26 +112,7 @@ public class ReportController {
         }
     }
 
-    @GetMapping
-    public Result<IPage<ReportConfig>> getReportList(
-            @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String reportName,
-            @RequestParam(required = false) String reportCategory,
-            @RequestParam(required = false) String reportType,
-            @RequestParam(required = false) Boolean isPublished,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) Long createdBy,
-            @RequestParam(required = false) String accessLevel) {
-        try {
-            Page<ReportConfig> pageObj = new Page<>(page, size);
-            IPage<ReportConfig> result = reportConfigService.getReportList(pageObj, reportName, reportCategory,
-                    reportType, isPublished, isActive, createdBy, accessLevel);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.error("Failed to get report list: " + e.getMessage());
-        }
-    }
+
 
     @GetMapping("/search")
     public Result<List<ReportConfig>> searchReports(@RequestParam String keyword) {
@@ -290,6 +297,9 @@ public class ReportController {
         }
     }
 
+    /***
+     * 报表预览
+     * 暂时屏蔽这个方法
     // Report preview and rendering
     @PostMapping("/{reportId}/preview")
     public Result<Map<String, Object>> previewReport(@PathVariable Long reportId, @RequestBody(required = false) Map<String, Object> parameters) {
@@ -300,7 +310,11 @@ public class ReportController {
             return Result.error("Failed to preview report: " + e.getMessage());
         }
     }
+    **/
 
+    /**
+     * 报表渲染
+     * 暂时屏蔽
     @PostMapping("/{reportId}/render")
     public Result<Map<String, Object>> renderReport(@PathVariable Long reportId, @RequestBody(required = false) Map<String, Object> parameters) {
         try {
@@ -310,6 +324,7 @@ public class ReportController {
             return Result.error("Failed to render report: " + e.getMessage());
         }
     }
+
 
     // Publishing and sharing
     @PostMapping("/{reportId}/publish")
@@ -447,6 +462,10 @@ public class ReportController {
         }
     }
 
+
+     * 生成报表预览数据
+     暂时屏蔽这个方法
+
     // Helper methods for report preview and rendering
     private Map<String, Object> generateReportPreview(Long reportId, Map<String, Object> parameters) {
         // Get report configuration
@@ -461,7 +480,7 @@ public class ReportController {
         preview.put("reportName", report.getReportName());
         preview.put("canvasWidth", report.getCanvasWidth());
         preview.put("canvasHeight", report.getCanvasHeight());
-        
+
         // Load component data
         List<Map<String, Object>> componentData = new ArrayList<>();
         for (ReportComponent component : report.getComponents()) {
@@ -500,7 +519,12 @@ public class ReportController {
         
         return preview;
     }
+    * */
 
+    /**
+     * 生成报表数据
+     * 暂时屏蔽这个方法
+     *
     private Map<String, Object> generateReportData(Long reportId, Map<String, Object> parameters) {
         // Similar to preview but with full data
         ReportConfig report = reportConfigService.getReportWithComponents(reportId);
@@ -552,4 +576,5 @@ public class ReportController {
         
         return rendered;
     }
+    * */
 }

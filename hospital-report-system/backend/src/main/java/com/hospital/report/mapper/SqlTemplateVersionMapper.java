@@ -13,12 +13,12 @@ public interface SqlTemplateVersionMapper extends BaseMapper<SqlTemplateVersion>
             "template_id, version_number, version_description, template_content, " +
             "change_log, is_current, created_by, created_time, " +
             "template_hash, parent_version_id, validation_status, validation_message, " +
-            "approval_status, approved_by, approved_time, modification_note" +
+            "approval_status, approved_by, approved_time, modification_note, datasource_id" +
             ") VALUES (" +
             "#{templateId}, #{versionNumber}, #{versionDescription}, #{templateContent}, " +
             "#{changeLog}, #{isCurrent}, #{createdBy}, #{createdTime}, " +
             "#{templateHash}, #{parentVersionId}, #{validationStatus}, #{validationMessage}, " +
-            "#{approvalStatus}, #{approvedBy}, #{approvedTime}, #{modificationNote}" +
+            "#{approvalStatus}, #{approvedBy}, #{approvedTime}, #{modificationNote}, #{dataSourceId}" +
             ")")
     @Options(useGeneratedKeys = true, keyProperty = "versionId", keyColumn = "version_id")
     int insertVersion(SqlTemplateVersion version);

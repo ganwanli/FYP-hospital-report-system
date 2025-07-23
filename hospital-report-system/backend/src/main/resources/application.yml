@@ -71,6 +71,17 @@ spring:
       max-request-size: 100MB
       file-size-threshold: 0
 
+  # JPA配置（用于自动建表）
+  jpa:
+    hibernate:
+      ddl-auto: update  # 自动更新表结构
+    show-sql: true      # 显示SQL语句
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        format_sql: true # 格式化SQL语句
+        use_sql_comments: true # 添加SQL注释
+
 # MyBatis Plus配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml

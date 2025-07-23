@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hospital.report.dto.ReportConfigDTO;
 import com.hospital.report.entity.ReportConfig;
 import com.hospital.report.entity.ReportComponent;
 import com.hospital.report.entity.ReportDataSource;
@@ -13,9 +14,12 @@ import com.hospital.report.mapper.ReportConfigMapper;
 import com.hospital.report.mapper.ReportComponentMapper;
 import com.hospital.report.mapper.ReportDataSourceMapper;
 import com.hospital.report.mapper.ReportVersionMapper;
+import com.hospital.report.repository.ReportConfigRepository;
 import com.hospital.report.service.ReportConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,68 +38,47 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     private final ReportVersionMapper reportVersionMapper;
     private final ObjectMapper objectMapper;
 
+    @Autowired
+    ReportConfigRepository reportConfigRepository;
+
     @Override
     @Transactional
-    public ReportConfig createReport(ReportConfig reportConfig) {
+    public ReportConfig createReport(ReportConfigDTO reportConfig) {
         reportConfig.setCreatedTime(LocalDateTime.now());
         reportConfig.setUpdatedTime(LocalDateTime.now());
-        reportConfig.setIsActive(true);
-        reportConfig.setIsPublished(false);
+        reportConfig.setIsActive(1);
+        reportConfig.setIsPublished(0);
         reportConfig.setVersion("v1.0");
+
+        //创建一个ReportConfig对象，再把reportConfigDTO的数据复制到reportConfigPojo中
+        ReportConfig reportConfigPojo = new ReportConfig();
+        BeanUtils.copyProperties(reportConfig, reportConfigPojo);
+
+        //用reportConfigRepository自带的方法save保存数据，这个方法如果没有数据的id，会自动创建一个id新增一条数据进去
+        ReportConfig savedReport = reportConfigRepository.save (reportConfigPojo);
         
-        if (reportConfig.getCanvasWidth() == null) {
-            reportConfig.setCanvasWidth(1200);
-        }
-        if (reportConfig.getCanvasHeight() == null) {
-            reportConfig.setCanvasHeight(800);
-        }
-        
-        reportConfigMapper.insert(reportConfig);
-        
-        // Save components if provided
-        if (reportConfig.getComponents() != null && !reportConfig.getComponents().isEmpty()) {
-            saveComponents(reportConfig.getReportId(), reportConfig.getComponents());
-        }
-        
-        // Save data sources if provided
-        if (reportConfig.getDataSources() != null && !reportConfig.getDataSources().isEmpty()) {
-            saveDataSources(reportConfig.getReportId(), reportConfig.getDataSources());
-        }
-        
+//        暂时不做版本控制
         // Create initial version
-        saveVersion(reportConfig.getReportId(), "Initial version", reportConfig.getCreatedBy());
+//        saveVersion(reportConfig.getReportId(), "Initial version", reportConfig.getCreatedBy());
         
-        return reportConfig;
+        return savedReport;
     }
 
     @Override
     @Transactional
     public ReportConfig updateReport(ReportConfig reportConfig) {
-        ReportConfig existingReport = reportConfigMapper.selectById(reportConfig.getReportId());
+        ReportConfig existingReport = reportConfigMapper.selectById(reportConfig.getId());
         if (existingReport == null) {
             throw new RuntimeException("Report not found");
         }
         
         reportConfig.setUpdatedTime(LocalDateTime.now());
-        reportConfigMapper.updateById(reportConfig);
+
+        reportConfigRepository.save(reportConfig);
         
-        // Update components if provided
-        if (reportConfig.getComponents() != null) {
-            reportComponentMapper.deleteByReportId(reportConfig.getReportId());
-            if (!reportConfig.getComponents().isEmpty()) {
-                saveComponents(reportConfig.getReportId(), reportConfig.getComponents());
-            }
-        }
-        
-        // Update data sources if provided
-        if (reportConfig.getDataSources() != null) {
-            reportDataSourceMapper.deleteByReportId(reportConfig.getReportId());
-            if (!reportConfig.getDataSources().isEmpty()) {
-                saveDataSources(reportConfig.getReportId(), reportConfig.getDataSources());
-            }
-        }
-        
-        return getReportById(reportConfig.getReportId());
+
+
+        return getReportById(reportConfig.getId());
     }
 
     @Override
@@ -110,26 +93,33 @@ public class ReportConfigServiceImpl implements ReportConfigService {
 
     @Override
     public ReportConfig getReportById(Long reportId) {
-        return reportConfigMapper.selectByIdWithUserInfo(reportId);
-    }
-
-    @Override
-    public ReportConfig getReportWithComponents(Long reportId) {
-        ReportConfig report = reportConfigMapper.selectByIdWithUserInfo(reportId);
-        if (report != null) {
-            report.setComponents(reportComponentMapper.selectByReportId(reportId));
-            report.setDataSources(reportDataSourceMapper.selectByReportId(reportId));
-        }
-        return report;
+        return reportConfigRepository.findById(reportId).orElseThrow(() -> new IllegalArgumentException("Report not found"));
+//        return reportConfigMapper.selectByIdWithUserInfo(reportId);
     }
 
     @Override
     public IPage<ReportConfig> getReportList(Page<ReportConfig> page, String reportName, String reportCategory,
-                                           String reportType, Boolean isPublished, Boolean isActive,
-                                           Long createdBy, String accessLevel) {
+                                             String reportType, Boolean isPublished, Boolean isActive,
+                                             Long createdBy, String accessLevel) {
+
         return reportConfigMapper.selectReportList(page, reportName, reportCategory, reportType,
-                                                  isPublished, isActive, createdBy, accessLevel);
+                isPublished, isActive, createdBy, accessLevel);
     }
+
+    /**
+     *
+//
+//    @Override
+//    public ReportConfig getReportWithComponents(Long reportId) {
+//        ReportConfig report = reportConfigMapper.selectByIdWithUserInfo(reportId);
+//        if (report != null) {
+//            report.setComponents(reportComponentMapper.selectByReportId(reportId));
+//            report.setDataSources(reportDataSourceMapper.selectByReportId(reportId));
+//        }
+//        return report;
+//    }
+
+
 
     @Override
     public List<ReportConfig> searchReports(String keyword) {
@@ -523,4 +513,6 @@ public class ReportConfigServiceImpl implements ReportConfigService {
             reportDataSourceMapper.batchInsert(dataSources);
         }
     }
+
+    **/
 }

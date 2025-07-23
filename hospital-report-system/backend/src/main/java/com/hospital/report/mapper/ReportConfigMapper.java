@@ -14,16 +14,16 @@ public interface ReportConfigMapper extends BaseMapper<ReportConfig> {
 
     @Select("SELECT r.*, u1.username as created_by_name, u2.username as updated_by_name " +
             "FROM report_config r " +
-            "LEFT JOIN user u1 ON r.created_by = u1.user_id " +
-            "LEFT JOIN user u2 ON r.updated_by = u2.user_id " +
-            "WHERE r.report_id = #{reportId}")
+            "LEFT JOIN sys_user u1 ON r.created_by = u1.id " +
+            "LEFT JOIN sys_user u2 ON r.updated_by = u2.id " +
+            "WHERE r.id = #{reportId}")
     ReportConfig selectByIdWithUserInfo(@Param("reportId") Long reportId);
 
     @Select("<script>" +
             "SELECT r.*, u1.username as created_by_name, u2.username as updated_by_name " +
             "FROM report_config r " +
-            "LEFT JOIN user u1 ON r.created_by = u1.user_id " +
-            "LEFT JOIN user u2 ON r.updated_by = u2.user_id " +
+            "LEFT JOIN sys_user u1 ON r.created_by = u1.id " +
+            "LEFT JOIN sys_user u2 ON r.updated_by = u2.id " +
             "WHERE 1=1 " +
             "<if test='reportName != null and reportName != \"\"'>" +
             "AND r.report_name LIKE CONCAT('%', #{reportName}, '%') " +

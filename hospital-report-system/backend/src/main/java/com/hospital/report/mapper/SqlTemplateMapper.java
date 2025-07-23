@@ -14,13 +14,13 @@ public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
 
     @Insert("INSERT INTO sql_template (" +
             "template_name, template_description, template_content, template_category, template_version, " +
-            "business_type, usage_type, department_code, tags, database_type, " +
+            "business_type, usage_type, department_code, tags, datasource_id, database_type, " +
             "template_hash, is_active, is_public, approval_status, " +
             "created_by, created_time, updated_by, updated_time, " +
             "usage_count, execution_timeout, max_rows" +
             ") VALUES (" +
             "#{templateName}, #{templateDescription}, #{templateContent}, #{templateCategory}, #{templateVersion}, " +
-            "#{businessType}, #{usageType}, #{departmentCode}, #{tags}, #{databaseType}, " +
+            "#{businessType}, #{usageType}, #{departmentCode}, #{tags}, #{datasourceId}, #{databaseType}, " +
             "#{templateHash}, #{isActive}, #{isPublic}, #{approvalStatus}, " +
             "#{createdBy}, #{createdTime}, #{updatedBy}, #{updatedTime}, " +
             "#{usageCount}, #{executionTimeout}, #{maxRows}" +
@@ -130,7 +130,7 @@ public interface SqlTemplateMapper extends BaseMapper<SqlTemplate> {
             "SET template_name = #{templateName}, template_description = #{templateDescription}, template_content = #{templateContent}, " +
             " template_category = #{templateCategory}, template_version = #{templateVersion}," +
             " business_type = #{businessType}, usage_type = #{usageType}, department_code = #{departmentCode}," +
-            " tags = #{tags}, template_hash = #{templateHash}," +
+            " tags = #{tags}, datasource_id = #{datasourceId}, template_hash = #{templateHash}," +
             " is_active = #{isActive}, is_public = #{isPublic}, approval_status = #{approvalStatus} " +
             "WHERE template_id = #{templateId}")
     int updateTemplateToNewVersion(SqlTemplate newTemplate);

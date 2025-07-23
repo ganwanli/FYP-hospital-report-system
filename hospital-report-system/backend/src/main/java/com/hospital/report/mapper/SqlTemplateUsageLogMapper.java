@@ -15,7 +15,7 @@ public interface SqlTemplateUsageLogMapper extends BaseMapper<SqlTemplateUsageLo
 
     @Select("SELECT l.*, u.username as user_name, t.template_name " +
             "FROM sql_template_usage_log l " +
-            "LEFT JOIN user u ON l.user_id = u.user_id " +
+            "LEFT JOIN sys_user u ON l.user_id = u.id " +
             "LEFT JOIN sql_template t ON l.template_id = t.template_id " +
             "WHERE l.template_id = #{templateId} " +
             "ORDER BY l.execution_time DESC")
@@ -23,7 +23,7 @@ public interface SqlTemplateUsageLogMapper extends BaseMapper<SqlTemplateUsageLo
 
     @Select("SELECT l.*, u.username as user_name, t.template_name " +
             "FROM sql_template_usage_log l " +
-            "LEFT JOIN user u ON l.user_id = u.user_id " +
+            "LEFT JOIN sys_user u ON l.user_id = u.id " +
             "LEFT JOIN sql_template t ON l.template_id = t.template_id " +
             "WHERE l.user_id = #{userId} " +
             "ORDER BY l.execution_time DESC")
@@ -59,7 +59,7 @@ public interface SqlTemplateUsageLogMapper extends BaseMapper<SqlTemplateUsageLo
             "COUNT(CASE WHEN l.execution_status = 'SUCCESS' THEN 1 END) as success_count, " +
             "AVG(l.execution_duration) as avg_duration " +
             "FROM sql_template_usage_log l " +
-            "LEFT JOIN user u ON l.user_id = u.user_id " +
+            "LEFT JOIN sys_user u ON l.user_id = u.id " +
             "WHERE l.template_id = #{templateId} " +
             "GROUP BY l.user_id, u.username " +
             "ORDER BY execution_count DESC " +

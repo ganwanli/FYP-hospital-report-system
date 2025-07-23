@@ -2,6 +2,7 @@ package com.hospital.report.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hospital.report.dto.ReportConfigDTO;
 import com.hospital.report.entity.ReportConfig;
 import com.hospital.report.entity.ReportComponent;
 import com.hospital.report.entity.ReportDataSource;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 public interface ReportConfigService {
 
-    ReportConfig createReport(ReportConfig reportConfig);
+    ReportConfig createReport(ReportConfigDTO reportConfig);
 
     ReportConfig updateReport(ReportConfig reportConfig);
 
@@ -19,11 +20,14 @@ public interface ReportConfigService {
 
     ReportConfig getReportById(Long reportId);
 
+    IPage<ReportConfig> getReportList(Page<ReportConfig> page, String reportName, String reportCategory,
+                                      String reportType, Boolean isPublished, Boolean isActive,
+                                      Long createdBy, String accessLevel);
+
+    /**
     ReportConfig getReportWithComponents(Long reportId);
 
-    IPage<ReportConfig> getReportList(Page<ReportConfig> page, String reportName, String reportCategory,
-                                     String reportType, Boolean isPublished, Boolean isActive,
-                                     Long createdBy, String accessLevel);
+
 
     List<ReportConfig> searchReports(String keyword);
 
@@ -105,4 +109,6 @@ public interface ReportConfigService {
     void saveAsTemplate(Long reportId, String templateName, String templateDescription);
 
     List<ReportConfig> getReportTemplates();
+
+    **/
 }

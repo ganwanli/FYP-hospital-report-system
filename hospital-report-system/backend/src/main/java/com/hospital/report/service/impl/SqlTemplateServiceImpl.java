@@ -322,6 +322,7 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
         duplicate.setIsActive(true);
         duplicate.setIsPublic(false);
         duplicate.setTags(original.getTags());
+        duplicate.setDatasourceId(original.getDatasourceId()); // 复制数据源ID
         duplicate.setDatabaseType(original.getDatabaseType());
         duplicate.setExecutionTimeout(original.getExecutionTimeout());
         duplicate.setMaxRows(original.getMaxRows());
@@ -426,6 +427,7 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
         version.setVersionNumber("v1.0");
         version.setVersionDescription("Initial version");
         version.setTemplateContent(template.getTemplateContent());
+        version.setDataSourceId(template.getDatasourceId()); // 设置数据源ID
         version.setChangeLog("Initial template creation");
         version.setIsCurrent(true);
         version.setCreatedBy(template.getCreatedBy());
@@ -459,6 +461,7 @@ public class SqlTemplateServiceImpl implements SqlTemplateService {
         version.setValidationStatus("PENDING");
         version.setApprovalStatus("PENDING");
         version.setModificationNote(template.getModificationNote());
+        version.setDataSourceId(template.getDatasourceId()); // 设置数据源ID
         
         SqlTemplateVersion currentVersion = versionMapper.selectCurrentVersion(template.getTemplateId());
         if (currentVersion != null) {

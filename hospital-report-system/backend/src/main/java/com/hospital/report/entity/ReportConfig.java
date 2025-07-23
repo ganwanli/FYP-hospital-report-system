@@ -1,97 +1,154 @@
 package com.hospital.report.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
+@Entity
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@TableName("report_config")
+@Table(name = "report_config")
 public class ReportConfig {
 
-    @TableId(value = "report_id", type = IdType.AUTO)
-    private Long reportId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", columnDefinition = "bigint NOT NULL AUTO_INCREMENT COMMENT '报表配置ID'")
+    private Long id;
 
-    @TableField("report_name")
+    @Column(name = "report_name", nullable = false, length = 200, columnDefinition = "varchar(200) NOT NULL COMMENT '报表名称'")
     private String reportName;
 
-    @TableField("report_description")
-    private String reportDescription;
+    @Column(name = "report_code", nullable = false, length = 100, unique = true, columnDefinition = "varchar(100) NOT NULL COMMENT '报表编码'")
+    private String reportCode;
 
-    @TableField("report_category")
-    private String reportCategory;
-
-    @TableField("report_type")
+    @Column(name = "report_type", nullable = false, length = 20, columnDefinition = "varchar(20) NOT NULL COMMENT '报表类型(TABLE,CHART,EXPORT)'")
     private String reportType;
 
-    @TableField("layout_config")
-    private String layoutConfig;
+    @Column(name = "report_category_id", columnDefinition = "bigint DEFAULT NULL COMMENT '分类ID'")
+    private Long reportCategoryId;
 
-    @TableField("components_config")
-    private String componentsConfig;
+    @Column(name = "sql_template_id", nullable = false, columnDefinition = "bigint NOT NULL COMMENT 'SQL模板ID'")
+    private Long sqlTemplateId;
 
-    @TableField("data_sources_config")
-    private String dataSourcesConfig;
+    @Column(name = "datasource_id", columnDefinition = "bigint DEFAULT NULL COMMENT '数据源ID'")
+    private Long datasourceId;
 
-    @TableField("style_config")
-    private String styleConfig;
+    @Lob
+    @Column(name = "report_config", nullable = false, columnDefinition = "longtext NOT NULL COMMENT '报表配置(JSON格式)'")
+    private String reportConfig;
 
-    @TableField("canvas_width")
-    private Integer canvasWidth;
+    @Lob
+    @Column(name = "chart_config", columnDefinition = "longtext COMMENT '图表配置(JSON格式)'")
+    private String chartConfig;
 
-    @TableField("canvas_height")
-    private Integer canvasHeight;
+    @Lob
+    @Column(name = "export_config", columnDefinition = "longtext DEFAULT NULL COMMENT '导出配置(JSON格式)'")
+    private String exportConfig;
 
-    @TableField("is_published")
-    private Boolean isPublished;
+    @Column(name = "cache_enabled", columnDefinition = "tinyint DEFAULT '0' COMMENT '是否启用缓存(1:是,0:否)'")
+    private Integer cacheEnabled = 0;
 
-    @TableField("is_active")
-    private Boolean isActive;
+    @Column(name = "cache_timeout", columnDefinition = "int DEFAULT '300' COMMENT '缓存超时时间(秒)'")
+    private Integer cacheTimeout = 300;
 
-    @TableField("created_by")
-    private Long createdBy;
+    @Column(name = "refresh_interval", columnDefinition = "int DEFAULT '0' COMMENT '刷新间隔(秒,0表示不自动刷新)'")
+    private Integer refreshInterval = 0;
 
-    @TableField("created_time")
+    @Column(name = "access_level", length = 20, columnDefinition = "varchar(20) DEFAULT 'PRIVATE' COMMENT '访问级别(PUBLIC,PRIVATE,DEPT)'")
+    private String accessLevel = "PRIVATE";
+
+    @Column(name = "description", columnDefinition = "text DEFAULT NULL COMMENT '描述'")
+    private String description;
+
+    @Column(name = "version", length = 20, columnDefinition = "varchar(20) DEFAULT '1.0' COMMENT '版本号'")
+    private String version = "1.0";
+
+    @Column(name = "view_count", columnDefinition = "int DEFAULT '0' COMMENT '查看次数'")
+    private Integer viewCount = 0;
+
+    @Column(name = "last_view_time", columnDefinition = "datetime DEFAULT NULL COMMENT '最后查看时间'")
+    private LocalDateTime lastViewTime;
+
+    @Column(name = "is_published", columnDefinition = "tinyint DEFAULT '0' COMMENT '是否发布(1:是,0:否)'")
+    private Integer isPublished = 0;
+
+    @Column(name = "is_active", columnDefinition = "tinyint DEFAULT '1' COMMENT '状态(1:启用,0:禁用)'")
+    private Integer isActive = 1;
+
+    @Column(name = "is_deleted", columnDefinition = "tinyint DEFAULT '0' COMMENT '是否删除(0:否,1:是)'")
+    private Integer isDeleted = 0;
+
+    @Column(name = "created_time", columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'")
     private LocalDateTime createdTime;
 
-    @TableField("updated_by")
-    private Long updatedBy;
-
-    @TableField("updated_time")
+    @Column(name = "updated_time", columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'")
     private LocalDateTime updatedTime;
 
-    @TableField("published_time")
-    private LocalDateTime publishedTime;
+    @Column(name = "created_by", columnDefinition = "bigint DEFAULT NULL COMMENT '创建人ID'")
+    private Long createdBy;
 
-    @TableField("version")
-    private String version;
+    @Column(name = "updated_by", columnDefinition = "bigint DEFAULT NULL COMMENT '更新人ID'")
+    private Long updatedBy;
 
-    @TableField("tags")
-    private String tags;
+    @Column(name = "approval_status", columnDefinition = "tinyint DEFAULT NULL COMMENT '审批状态(1：草稿；2：审批中；3：已审批；4：拒绝）'")
+    private Integer approvalStatus;
 
-    @TableField("access_level")
-    private String accessLevel;
+    @Column(name = "approved_by", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '审批人'")
+    private String approvedBy;
 
-    @TableField("refresh_interval")
-    private Integer refreshInterval;
+    @Column(name = "approved_time", columnDefinition = "datetime DEFAULT NULL COMMENT '审批时间'")
+    private LocalDateTime approvedTime;
 
-    @TableField("thumbnail")
-    private String thumbnail;
+    @Column(name = "department_code", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '科室代码'")
+    private String departmentCode;
 
-    @TableField(exist = false)
+    @Column(name = "business_type", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '业务分类类别'")
+    private String businessType;
+
+    @Column(name = "usage_type", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '用途分类类别'")
+    private String usageType;
+
+    // 外键关联 - 如果需要的话可以取消注释
+    /*
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", referencedColumnName = "id",
+               foreignKey = @ForeignKey(name = "fk_report_config_category"))
+    private ReportCategory category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "datasource_id", referencedColumnName = "id",
+               foreignKey = @ForeignKey(name = "fk_report_config_datasource"))
+    private SysDatasource datasource;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_id", referencedColumnName = "id",
+               foreignKey = @ForeignKey(name = "fk_report_config_template"))
+    private SysSqlTemplate template;
+    */
+
+    // 非持久化字段
+    @Transient
     private String createdByName;
 
-    @TableField(exist = false)
+    @Transient
     private String updatedByName;
 
-    @TableField(exist = false)
-    private List<ReportComponent> components;
+    @PrePersist
+    protected void onCreate() {
+        if (createdTime == null) {
+            createdTime = LocalDateTime.now();
+        }
+        if (updatedTime == null) {
+            updatedTime = LocalDateTime.now();
+        }
+    }
 
-    @TableField(exist = false)
-    private List<ReportDataSource> dataSources;
+    @PreUpdate
+    protected void onUpdate() {
+        updatedTime = LocalDateTime.now();
+    }
 }
