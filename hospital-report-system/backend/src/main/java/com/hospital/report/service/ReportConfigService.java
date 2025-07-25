@@ -111,4 +111,25 @@ public interface ReportConfigService {
     List<ReportConfig> getReportTemplates();
 
     **/
+
+    // 观看次数管理
+    /**
+     * 增加报表观看次数
+     * @param reportId 报表ID
+     * @return 新的观看次数
+     */
+    int incrementViewCount(long reportId);
+
+    /**
+     * 获取报表观看次数
+     * @param reportId 报表ID
+     * @return 观看次数
+     */
+    int getViewCount(int reportId);
+
+    /**
+     * 重置报表观看次数
+     * @param reportId 报表ID
+     */
+    void resetViewCount(int reportId);
 }

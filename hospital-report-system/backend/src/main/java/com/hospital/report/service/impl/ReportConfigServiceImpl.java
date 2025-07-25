@@ -67,10 +67,11 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     @Override
     @Transactional
     public ReportConfig updateReport(ReportConfig reportConfig) {
-        ReportConfig existingReport = reportConfigMapper.selectById(reportConfig.getId());
-        if (existingReport == null) {
-            throw new RuntimeException("Report not found");
-        }
+        ReportConfig existingReport = reportConfigRepository.findById(reportConfig.getId()).orElseThrow(() -> new IllegalArgumentException("Report not found"));
+//                reportConfigMapper.selectById(reportConfig.getId());
+//        if (existingReport == null) {
+//            throw new RuntimeException("Report not found");
+//        }
         
         reportConfig.setUpdatedTime(LocalDateTime.now());
 
@@ -85,10 +86,11 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     @Transactional
     public void deleteReport(Long reportId) {
         // Delete in order: components, data sources, versions, then report
-        reportComponentMapper.deleteByReportId(reportId);
-        reportDataSourceMapper.deleteByReportId(reportId);
-        reportVersionMapper.deleteByReportId(reportId);
-        reportConfigMapper.deleteById(reportId);
+        reportConfigRepository.deleteById(reportId);
+//        reportComponentMapper.deleteByReportId(reportId);
+//        reportDataSourceMapper.deleteByReportId(reportId);
+//        reportVersionMapper.deleteByReportId(reportId);
+//        reportConfigMapper.deleteById(reportId);
     }
 
     @Override
@@ -515,4 +517,55 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     }
 
     **/
+
+    // 观看次数管理实现
+    @Override
+    @Transactional
+    public int incrementViewCount(long reportId) {
+        log.info("Incrementing view count for report {}", reportId);
+
+        // 检查报表是否存在
+        ReportConfig report = reportConfigMapper.selectByIdWithUserInfo(reportId);
+        if (report == null) {
+            throw new RuntimeException("Report not found with id: " + reportId);
+        }
+
+        // 增加观看次数
+        int currentViewCount = report.getViewCount() != null ? report.getViewCount() : 0;
+        int newViewCount = currentViewCount + 1;
+
+        // 更新数据库
+        report.setViewCount(newViewCount);
+        report.setUpdatedTime(LocalDateTime.now());
+        reportConfigRepository.save(report);
+
+        log.info("View count for report {} updated from {} to {}", reportId, currentViewCount, newViewCount);
+        return newViewCount;
+    }
+
+    @Override
+    public int getViewCount(int reportId) {
+        ReportConfig report = reportConfigMapper.selectById(reportId);
+        if (report == null) {
+            throw new RuntimeException("Report not found with id: " + reportId);
+        }
+        return report.getViewCount() != null ? report.getViewCount() : 0;
+    }
+
+    @Override
+    @Transactional
+    public void resetViewCount(int reportId) {
+        log.info("Resetting view count for report {}", reportId);
+
+        ReportConfig report = reportConfigMapper.selectById(reportId);
+        if (report == null) {
+            throw new RuntimeException("Report not found with id: " + reportId);
+        }
+
+        report.setViewCount(0);
+        report.setUpdatedTime(LocalDateTime.now());
+        reportConfigMapper.updateById(report);
+
+        log.info("View count for report {} reset to 0", reportId);
+    }
 }

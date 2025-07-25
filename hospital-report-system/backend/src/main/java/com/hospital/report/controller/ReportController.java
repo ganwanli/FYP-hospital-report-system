@@ -98,6 +98,62 @@ public class ReportController {
     }
 
     /**
+     * 增加报表观看次数
+     */
+    @PutMapping("/increment-view-count/{id}")
+    public Result<Map<String, Object>> incrementViewCount(@PathVariable long id) {
+        try {
+            // 调用服务层方法增加观看次数
+            int newViewCount = reportConfigService.incrementViewCount(id);
+
+            // 构建返回数据
+            Map<String, Object> data = new HashMap<>();
+            data.put("reportId", id);
+            data.put("newViewCount", newViewCount);
+
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.error("Failed to increment view count: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取报表观看次数
+     */
+    @GetMapping("/{id}/view-count")
+    public Result<Map<String, Object>> getViewCount(@PathVariable int id) {
+        try {
+            int viewCount = reportConfigService.getViewCount(id);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("reportId", id);
+            data.put("viewCount", viewCount);
+
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.error("Failed to get view count: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 重置报表观看次数
+     */
+    @PutMapping("/{id}/reset-view-count")
+    public Result<Map<String, Object>> resetViewCount(@PathVariable int id) {
+        try {
+            reportConfigService.resetViewCount(id);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("reportId", id);
+            data.put("newViewCount", 0L);
+
+            return Result.success(data);
+        } catch (Exception e) {
+            return Result.error("Failed to reset view count: " + e.getMessage());
+        }
+    }
+
+    /**
     @GetMapping("/{id}/full")
     public Result<ReportConfig> getReportWithComponents(@PathVariable Long id) {
         try {

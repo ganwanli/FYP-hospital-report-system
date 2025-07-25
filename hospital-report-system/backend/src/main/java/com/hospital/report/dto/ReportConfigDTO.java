@@ -24,11 +24,9 @@ public class ReportConfigDTO implements Serializable {
     @Pattern(regexp = "^[A-Z0-9_]+$", message = "报表编码只能包含大写字母、数字和下划线")
     private String reportCode;
 
-    @NotBlank(message = "报表类型不能为空")
     @Size(max = 20, message = "报表类型长度不能超过20个字符")
     private String reportType;
 
-    @NotNull(message = "报表分类不能为空")
     @Positive(message = "报表分类ID必须为正数")
     private Long reportCategoryId;
 
