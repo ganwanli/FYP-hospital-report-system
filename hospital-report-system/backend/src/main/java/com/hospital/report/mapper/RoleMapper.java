@@ -13,19 +13,19 @@ public interface RoleMapper extends BaseMapper<Role> {
 
     @Select("SELECT r.* " +
             "FROM sys_role r " +
-            "WHERE r.is_deleted = 0 " +
+            "WHERE r.deleted = 0 " +
             "ORDER BY r.sort_order ASC, r.created_time DESC")
     List<Role> findAllRoles();
 
     @Select("SELECT r.* " +
             "FROM sys_role r " +
             "LEFT JOIN sys_user_role ur ON r.id = ur.role_id " +
-            "WHERE ur.user_id = #{userId} AND r.is_deleted = 0")
+            "WHERE ur.user_id = #{userId} AND r.deleted = 0")
     List<Role> findRolesByUserId(@Param("userId") Long userId);
 
     @Select("SELECT p.* " +
             "FROM sys_permission p " +
             "LEFT JOIN sys_role_permission rp ON p.id = rp.permission_id " +
-            "WHERE rp.role_id = #{roleId} AND p.is_deleted = 0")
+            "WHERE rp.role_id = #{roleId} AND p.deleted = 0")
     List<Long> findPermissionIdsByRoleId(@Param("roleId") Long roleId);
 }

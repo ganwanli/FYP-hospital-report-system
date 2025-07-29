@@ -30,9 +30,6 @@ public class Role extends Model<Role> {
     @TableField("description")
     private String description;
 
-    @TableField("data_scope")
-    private String dataScope;
-
     @TableField("status")
     private Integer status;
 
@@ -54,9 +51,9 @@ public class Role extends Model<Role> {
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
 
-    @TableField("is_deleted")
+    @TableField("deleted")
     @TableLogic
-    private Boolean isDeleted;
+    private Boolean deleted;
 
     @TableField(exist = false)
     private List<Permission> permissions;

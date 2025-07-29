@@ -36,7 +36,11 @@ public interface UserService extends IService<User>, UserDetailsService {
 
     boolean createUser(User user);
 
+    boolean createUserWithRole(User user, Long roleId);
+
     boolean updateUser(User user);
 
     boolean deleteUser(Long userId);
+
+    boolean deleteUser(Long userId, Long updatedBy);
 }

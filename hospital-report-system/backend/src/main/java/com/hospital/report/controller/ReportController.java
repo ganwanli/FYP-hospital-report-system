@@ -2,18 +2,23 @@ package com.hospital.report.controller;
 
 import com.hospital.report.common.Result;
 import com.hospital.report.dto.ReportConfigDTO;
+import com.hospital.report.dto.ReportAuditDTO;
 import com.hospital.report.entity.ReportConfig;
 import com.hospital.report.entity.ReportComponent;
 import com.hospital.report.entity.ReportDataSource;
 import com.hospital.report.service.ReportConfigService;
 import com.hospital.report.service.ReportDataService;
+import com.hospital.report.service.ReportAuditService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +34,8 @@ public class ReportController {
     private final ReportDataService reportDataService;
     @Autowired
     private ReportConfigService reportConfigService;
+    @Autowired
+    private ReportAuditService reportAuditService;
 
     // Report CRUD operations
     @PostMapping
@@ -633,4 +640,129 @@ public class ReportController {
         return rendered;
     }
     * */
+
+    // ==================== 审核相关接口 ====================
+
+    /**
+     * 审核单个报表
+     */
+    @PutMapping("/{id}/audit")
+    public Result<ReportAuditDTO.AuditResult> auditReport(
+            @PathVariable Long id,
+            @RequestBody ReportAuditDTO.AuditRequest request,
+            Authentication authentication) {
+        try {
+            ReportAuditDTO.AuditResult result = reportAuditService.auditReport(id, request, authentication);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("审核失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量审核报表
+     */
+    @PutMapping("/batch-audit")
+    public Result<ReportAuditDTO.BatchAuditResult> batchAuditReports(
+            @RequestBody ReportAuditDTO.BatchAuditRequest request,
+            Authentication authentication) {
+        try {
+            // 限制批量操作数量
+            if (request.getReportIds().size() > 50) {
+                return Result.error("单次批量审核不能超过50个报表");
+            }
+
+            ReportAuditDTO.BatchAuditResult result = reportAuditService.batchAuditReports(request, authentication);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("批量审核失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 发布报表
+     */
+    @PutMapping("/{id}/publish")
+    public Result<ReportAuditDTO.PublishResult> publishReport(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            ReportAuditDTO.PublishResult result = reportAuditService.publishReport(id, authentication);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("发布失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 取消发布报表
+     */
+    @PutMapping("/{id}/unpublish")
+    public Result<ReportAuditDTO.UnpublishResult> unpublishReport(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            ReportAuditDTO.UnpublishResult result = reportAuditService.unpublishReport(id, authentication);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("取消发布失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 重新提交审核
+     */
+    @PutMapping("/{id}/resubmit")
+    public Result<Void> resubmitForAudit(
+            @PathVariable Long id,
+            Authentication authentication) {
+        try {
+            reportAuditService.resubmitForAudit(id, authentication);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error("重新提交失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取审核统计
+     */
+    @GetMapping("/audit-statistics")
+    public Result<ReportAuditDTO.AuditStatistics> getAuditStatistics() {
+        try {
+            ReportAuditDTO.AuditStatistics statistics = reportAuditService.getAuditStatistics();
+            return Result.success(statistics);
+        } catch (Exception e) {
+            return Result.error("获取审核统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取发布统计
+     */
+    @GetMapping("/publish-statistics")
+    public Result<ReportAuditDTO.PublishStatistics> getPublishStatistics() {
+        try {
+            ReportAuditDTO.PublishStatistics statistics = reportAuditService.getPublishStatistics();
+            return Result.success(statistics);
+        } catch (Exception e) {
+            return Result.error("获取发布统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取审核历史
+     */
+    @GetMapping("/{id}/audit-history")
+    public Result<List<ReportAuditDTO.AuditLog>> getAuditHistory(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20")  int size) {
+        try {
+            List<ReportAuditDTO.AuditLog> history = reportAuditService.getAuditHistory(id, page, size);
+            return Result.success(history);
+        } catch (Exception e) {
+            return Result.error("获取审核历史失败: " + e.getMessage());
+        }
+    }
 }

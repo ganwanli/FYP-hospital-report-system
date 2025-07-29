@@ -74,9 +74,9 @@ public class Permission extends Model<Permission> {
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
 
-    @TableField("is_deleted")
+    @TableField("deleted")
     @TableLogic
-    private Boolean isDeleted;
+    private int deleted;
 
     @Override
     public Serializable pkVal() {

@@ -22,6 +22,8 @@ public class UserUpdateRequest {
 
     private Long departmentId;
 
+    private Long updatedBy;
+
     @Size(max = 50, message = "职位不能超过50个字符")
     private String position;
 

@@ -106,8 +106,9 @@ public class UserController {
             user.setPosition(request.getPosition());
             user.setEmployeeId(request.getEmployeeId());
             user.setRemarks(request.getRemarks());
-            
-            boolean success = userService.createUser(user);
+            user.setCreatedBy(request.getCreatedBy());
+
+            boolean success = userService.createUserWithRole(user, request.getRoleId());
             if (success) {
                 return Result.success();
             } else {
@@ -138,7 +139,8 @@ public class UserController {
             user.setPosition(request.getPosition());
             user.setEmployeeId(request.getEmployeeId());
             user.setRemarks(request.getRemarks());
-            
+            user.setUpdatedBy(user.getId());
+
             boolean success = userService.updateUser(user);
             if (success) {
                 return Result.success();
@@ -154,14 +156,14 @@ public class UserController {
     @DeleteMapping("/{id}")
     @Operation(summary = "删除用户", description = "删除用户")
     @RequiresPermission("USER_DELETE")
-    public Result<Void> deleteUser(@PathVariable Long id) {
+    public Result<Void> deleteUser(@PathVariable Long id, @RequestParam Long updatedBy) {
         try {
             User user = userService.getById(id);
             if (user == null) {
                 return Result.error("用户不存在");
             }
-            
-            boolean success = userService.deleteUser(id);
+
+            boolean success = userService.deleteUser(id, updatedBy);
             if (success) {
                 return Result.success();
             } else {

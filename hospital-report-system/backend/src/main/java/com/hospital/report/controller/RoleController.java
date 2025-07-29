@@ -85,7 +85,7 @@ public class RoleController {
         }
     }
 
-    @GetMapping("/{id}/permissions")
+    @GetMapping("/permissions/{id}")
     @Operation(summary = "查询角色权限", description = "查询角色拥有的权限ID列表")
     @RequiresPermission("ROLE_QUERY")
     public Result<List<Long>> getRolePermissions(@PathVariable Long id) {
@@ -120,7 +120,6 @@ public class RoleController {
             role.setRoleName(request.getRoleName());
             role.setRoleCode(request.getRoleCode());
             role.setDescription(request.getDescription());
-            role.setDataScope(request.getDataScope());
             role.setSortOrder(request.getSortOrder());
             role.setRemarks(request.getRemarks());
             
@@ -150,9 +149,9 @@ public class RoleController {
             role.setRoleName(request.getRoleName());
             role.setRoleCode(request.getRoleCode());
             role.setDescription(request.getDescription());
-            role.setDataScope(request.getDataScope());
             role.setSortOrder(request.getSortOrder());
             role.setRemarks(request.getRemarks());
+            role.setStatus(request.getStatus());
             
             boolean success = roleService.updateRole(role);
             if (success) {
@@ -209,7 +208,7 @@ public class RoleController {
         }
     }
 
-    @PostMapping("/{id}/permissions")
+    @PostMapping("/permissions/{id}")
     @Operation(summary = "分配权限", description = "为角色分配权限")
     @RequiresPermission("ROLE_ASSIGN_PERMISSION")
     public Result<Void> assignPermissions(@PathVariable Long id, @Valid @RequestBody RolePermissionRequest request) {
@@ -228,7 +227,7 @@ public class RoleController {
 
     @PostMapping("/user/{userId}/roles")
     @Operation(summary = "分配角色", description = "为用户分配角色")
-    @RequiresPermission("ROLE_ASSIGN_USER")
+//    @RequiresPermission("ROLE_ASSIGN_USER")
     public Result<Void> assignRoles(@PathVariable Long userId, @Valid @RequestBody UserRoleRequest request) {
         try {
             boolean success = roleService.assignRolesToUser(userId, request.getRoleIds());
@@ -240,6 +239,19 @@ public class RoleController {
         } catch (Exception e) {
             log.error("分配角色失败", e);
             return Result.error("分配失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/users/{id}")
+    @Operation(summary = "查询角色成员", description = "查询角色拥有的用户列表")
+    @RequiresPermission("ROLE_QUERY")
+    public Result<List<com.hospital.report.entity.User>> getRoleUsers(@PathVariable Long id) {
+        try {
+            List<com.hospital.report.entity.User> users = roleService.getUsersByRoleId(id);
+            return Result.success(users);
+        } catch (Exception e) {
+            log.error("查询角色成员失败", e);
+            return Result.error("查询失败: " + e.getMessage());
         }
     }
 }

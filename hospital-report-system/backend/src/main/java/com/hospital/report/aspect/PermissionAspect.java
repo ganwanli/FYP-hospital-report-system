@@ -51,6 +51,7 @@ public class PermissionAspect {
             methodName.equals("findByUsername") ||
             methodName.equals("findPermissionsByUserId") ||
             methodName.equals("getCurrentUser") ||
+            methodName.equals("createUser") ||
             methodName.equals("hasPermission")) {
             log.debug("强制跳过认证相关方法权限检查: {}.{}", className, methodName);
             return point.proceed();

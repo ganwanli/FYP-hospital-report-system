@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper
 public interface PermissionMapper extends BaseMapper<Permission> {
 
-    @Select("SELECT * FROM sys_permission WHERE is_deleted = 0 ORDER BY sort_order ASC, created_time ASC")
+    @Select("SELECT * FROM sys_permission WHERE deleted = 0 ORDER BY sort_order ASC, created_time ASC")
     List<Permission> findAllPermissions();
 
     @Select("SELECT * FROM sys_permission WHERE parent_id = #{parentId} AND is_deleted = 0 ORDER BY sort_order ASC")

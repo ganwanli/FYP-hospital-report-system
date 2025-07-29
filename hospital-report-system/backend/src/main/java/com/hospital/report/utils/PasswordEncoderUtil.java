@@ -20,6 +20,8 @@ public class PasswordEncoderUtil {
         return bCryptPasswordEncoder.matches(rawPassword, encodedPassword);
     }
 
+
+
     public static String generateDefaultPassword() {
         return "HospitalReport@123";
     }

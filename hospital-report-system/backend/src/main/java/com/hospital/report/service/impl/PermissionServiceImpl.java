@@ -93,7 +93,7 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             permission.setCreatedTime(LocalDateTime.now());
             permission.setUpdatedTime(LocalDateTime.now());
             permission.setStatus(1);
-            permission.setIsDeleted(false);
+            permission.setDeleted(0);
             
             if (permission.getParentId() == null) {
                 permission.setParentId(0L);
@@ -130,7 +130,7 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             // 逻辑删除权限
             Permission permission = new Permission();
             permission.setId(permissionId);
-            permission.setIsDeleted(true);
+            permission.setDeleted(1);
             permission.setUpdatedTime(LocalDateTime.now());
             
             return updateById(permission);

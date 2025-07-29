@@ -38,4 +38,9 @@ public class UserCreateRequest {
 
     @Size(max = 255, message = "备注不能超过255个字符")
     private String remarks;
+
+    private Long createdBy;
+
+    // 角色ID，可选
+    private Long roleId;
 }

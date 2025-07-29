@@ -28,4 +28,6 @@ public class RoleCreateRequest {
 
     @Size(max = 255, message = "备注不能超过255个字符")
     private String remarks;
+
+    private int status = 1;
 }

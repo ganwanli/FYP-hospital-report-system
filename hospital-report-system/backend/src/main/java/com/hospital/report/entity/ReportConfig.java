@@ -94,13 +94,35 @@ public class ReportConfig {
     @Column(name = "updated_by", columnDefinition = "bigint DEFAULT NULL COMMENT '更新人ID'")
     private Long updatedBy;
 
-    @Column(name = "approval_status", columnDefinition = "tinyint DEFAULT NULL COMMENT '审批状态(1：草稿；2：审批中；3：已审批；4：拒绝）'")
-    private Integer approvalStatus;
+    @Column(name = "approval_status", columnDefinition = "tinyint DEFAULT 1 COMMENT '审核状态: 1-草稿, 2-待审核, 3-审核通过, 4-审核拒绝'")
+    private Integer approvalStatus = 1;
 
-    @Column(name = "approved_by", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '审批人'")
+    @Column(name = "submit_time", columnDefinition = "datetime DEFAULT NULL COMMENT '提交审核时间'")
+    private LocalDateTime submitTime;
+
+    @Column(name = "audit_time", columnDefinition = "datetime DEFAULT NULL COMMENT '最后审核时间'")
+    private LocalDateTime auditTime;
+
+    @Column(name = "auditor_id", columnDefinition = "bigint DEFAULT NULL COMMENT '最后审核员ID'")
+    private Long auditorId;
+
+    @Column(name = "audit_comment", columnDefinition = "text DEFAULT NULL COMMENT '最后审核意见'")
+    private String auditComment;
+
+    @Column(name = "publish_time", columnDefinition = "datetime DEFAULT NULL COMMENT '发布时间'")
+    private LocalDateTime publishTime;
+
+    @Column(name = "unpublish_time", columnDefinition = "datetime DEFAULT NULL COMMENT '取消发布时间'")
+    private LocalDateTime unpublishTime;
+
+    @Column(name = "publisher_id", columnDefinition = "bigint DEFAULT NULL COMMENT '发布人ID'")
+    private Long publisherId;
+
+    // 保留原有字段以兼容现有代码
+    @Column(name = "approved_by", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '审批人(兼容字段)'")
     private String approvedBy;
 
-    @Column(name = "approved_time", columnDefinition = "datetime DEFAULT NULL COMMENT '审批时间'")
+    @Column(name = "approved_time", columnDefinition = "datetime DEFAULT NULL COMMENT '审批时间(兼容字段)'")
     private LocalDateTime approvedTime;
 
     @Column(name = "department_code", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '科室代码'")

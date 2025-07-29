@@ -17,6 +17,8 @@ public interface RoleService extends IService<Role> {
 
     boolean assignRolesToUser(Long userId, List<Long> roleIds);
 
+    boolean assignRoleToUser(Long userId, Long roleId, Long operatedBy);
+
     boolean removeRoleFromUser(Long userId, Long roleId);
 
     boolean createRole(Role role);
@@ -26,4 +28,6 @@ public interface RoleService extends IService<Role> {
     boolean deleteRole(Long roleId);
 
     List<Long> getUserIdsByRoleId(Long roleId);
+
+    List<com.hospital.report.entity.User> getUsersByRoleId(Long roleId);
 }

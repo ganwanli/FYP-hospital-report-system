@@ -45,7 +45,7 @@ public class User extends Model<User> {
     @TableField(value = "birth_date", exist = false)
     private LocalDateTime birthDate;
 
-    @TableField("dept_id")
+    @TableField("department_id")
     private Long departmentId;
 
     @TableField(value = "position", exist = false)
@@ -101,7 +101,7 @@ public class User extends Model<User> {
 
     @TableField("deleted")
     @TableLogic
-    private Boolean isDeleted;
+    private Integer deleted;
 
     @TableField(exist = false)
     private List<Role> roles;
