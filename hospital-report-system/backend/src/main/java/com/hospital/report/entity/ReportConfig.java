@@ -152,12 +152,12 @@ public class ReportConfig {
     private SysSqlTemplate template;
     */
 
-    // 非持久化字段
-    @Transient
-    private String createdByName;
-
-    @Transient
-    private String updatedByName;
+//    // 非持久化字段
+//    @Transient
+//    private String createdByName;
+//
+//    @Transient
+//    private String updatedByName;
 
     @PrePersist
     protected void onCreate() {
