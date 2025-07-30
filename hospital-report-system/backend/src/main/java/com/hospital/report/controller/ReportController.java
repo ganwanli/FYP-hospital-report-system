@@ -646,7 +646,7 @@ public class ReportController {
     /**
      * 审核单个报表
      */
-    @PutMapping("/{id}/audit")
+    @PutMapping("/audit/{id}")
     public Result<ReportAuditDTO.AuditResult> auditReport(
             @PathVariable Long id,
             @RequestBody ReportAuditDTO.AuditRequest request,

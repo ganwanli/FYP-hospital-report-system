@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "ag-grid-react": "^34.0.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "xlsx": "^0.18.5"
+  }
+}
