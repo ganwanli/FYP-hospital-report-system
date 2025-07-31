@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
  * @since 2024-01-01
  */
 @Configuration
-@MapperScan("com.hospital.report.mapper")
+@MapperScan({"com.hospital.report.mapper", "com.hospital.report.ai.mapper"})
 public class MyBatisPlusConfig {
 
     /**

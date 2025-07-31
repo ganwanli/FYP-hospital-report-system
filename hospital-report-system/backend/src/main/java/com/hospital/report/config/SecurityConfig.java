@@ -136,6 +136,15 @@ public class SecurityConfig {
             .exceptionHandling(exception -> {
                 log.info("配置异常处理");
                 exception.authenticationEntryPoint(jwtAuthenticationEntryPoint);
+                exception.accessDeniedHandler((request, response, accessDeniedException) -> {
+                    log.error("Access denied for request: {} - {}", request.getRequestURI(), accessDeniedException.getMessage());
+                    if (!response.isCommitted()) {
+                        response.setStatus(403);
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+                        response.getWriter().write("{\"error\":\"Access Denied\",\"message\":\"" + accessDeniedException.getMessage() + "\"}");
+                    }
+                });
             })
             .sessionManagement(session -> {
                 log.info("配置会话管理");
@@ -143,20 +152,31 @@ public class SecurityConfig {
             })
             .authorizeHttpRequests(authorize -> {
                 log.info("配置请求授权");
+                
+                // 配置公开访问的端点 - 注意：由于context-path是/api，Spring Security看到的路径不包含/api前缀
+                authorize.requestMatchers("/auth/**").permitAll();
+                authorize.requestMatchers("/swagger-ui/**").permitAll();
+                authorize.requestMatchers("/v3/api-docs/**").permitAll();
+                authorize.requestMatchers("/actuator/**").permitAll();
+                authorize.requestMatchers("/datasource/**").permitAll();
+                authorize.requestMatchers("/sql-execution/**").permitAll();
+                authorize.requestMatchers("/sql-templates/**").permitAll();
+                authorize.requestMatchers("/ai-assistant/**").permitAll(); // 修复：移除/api前缀
+                authorize.requestMatchers("/system/dict/**").permitAll();
+                
+                log.info("AI助手端点已添加到允许列表: /ai-assistant/**");
+                
+                // 继续使用配置文件中的其他忽略URL（如果存在）
                 String[] urls = ignoreUrlsConfig().getUrls();
                 log.info("忽略URL配置: {}", urls != null ? java.util.Arrays.toString(urls) : "null");
                 if (urls != null) {
                     for (String url : urls) {
                         log.info("添加公开访问URL: {}", url);
+                        // 由于context-path是/api，Spring Security处理的路径不包含/api前缀
                         authorize.requestMatchers(new AntPathRequestMatcher(url)).permitAll();
                     }
-                } else {
-                    log.warn("忽略URL配置为空，使用默认配置");
-                    // 添加默认的公开端点
-                    authorize.requestMatchers(new AntPathRequestMatcher("/api/datasource/**")).permitAll();
-                    authorize.requestMatchers(new AntPathRequestMatcher("/api/sql-execution/**")).permitAll();
-                    authorize.requestMatchers(new AntPathRequestMatcher("/api/sql-templates/**")).permitAll();
                 }
+                
                 authorize.anyRequest().authenticated();
             })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
