@@ -142,7 +142,7 @@ public class DashboardController {
     /**
      * 设置默认Dashboard
      */
-    @PutMapping("/{dashboardId}/default")
+    @PutMapping("/default/{dashboardId}")
     public Result<Boolean> setDefaultDashboard(@PathVariable Long dashboardId) {
         try {
             // TODO: 从JWT Token或Session中获取用户ID
