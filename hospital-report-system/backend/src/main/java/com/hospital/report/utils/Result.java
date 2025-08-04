@@ -18,7 +18,7 @@ public class Result<T> {
     
     // 成功返回
     public static <T> Result<T> success(T data) {
-        return new Result<>(200, "操作成功", data);
+        return new Result<>(200, "Success", data);
     }
     
     public static <T> Result<T> success(String message, T data) {
@@ -26,7 +26,7 @@ public class Result<T> {
     }
     
     public static <T> Result<T> success() {
-        return new Result<>(200, "操作成功", null);
+        return new Result<>(200, "Success", null);
     }
     
     // 失败返回

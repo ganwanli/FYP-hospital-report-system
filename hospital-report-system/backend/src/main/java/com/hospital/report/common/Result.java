@@ -17,11 +17,11 @@ public class Result<T> {
     }
 
     public static <T> Result<T> success() {
-        return new Result<>(200, "操作成功", null);
+        return new Result<>(200, "Success", null);
     }
 
     public static <T> Result<T> success(T data) {
-        return new Result<>(200, "操作成功", data);
+        return new Result<>(200, "Success", data);
     }
 
     public static <T> Result<T> success(String message, T data) {
@@ -29,7 +29,7 @@ public class Result<T> {
     }
 
     public static <T> Result<T> error() {
-        return new Result<>(500, "操作失败", null);
+        return new Result<>(500, "Failed", null);
     }
 
     public static <T> Result<T> error(String message) {
