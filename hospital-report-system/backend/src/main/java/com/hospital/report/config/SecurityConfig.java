@@ -162,6 +162,7 @@ public class SecurityConfig {
                 authorize.requestMatchers("/sql-execution/**").permitAll();
                 authorize.requestMatchers("/sql-templates/**").permitAll();
                 authorize.requestMatchers("/ai-assistant/**").permitAll(); // 修复：移除/api前缀
+                authorize.requestMatchers("/ai-schema/**").permitAll(); // AI Schema端点
                 authorize.requestMatchers("/system/dict/**").permitAll();
                 
                 log.info("AI助手端点已添加到允许列表: /ai-assistant/**");

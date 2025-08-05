@@ -11,5 +11,7 @@ public class AIAssistantRequest {
     private Long userId;
     private Long datasourceId;
     private String message;
+    private String analysisType; // 新增字段，用于标识请求类型
+    private String originalQuery; // 新增字段，用于存储原始查询
     private Map<String, Object> context;
 }

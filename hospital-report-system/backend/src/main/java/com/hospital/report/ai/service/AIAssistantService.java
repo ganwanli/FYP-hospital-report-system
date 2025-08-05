@@ -14,6 +14,7 @@ import com.hospital.report.ai.enums.MessageType;
 import com.hospital.report.ai.mapper.SqlAnalysisLogMapper;
 import com.hospital.report.entity.DataSource;
 import com.hospital.report.service.DataSourceService;
+import com.hospital.report.ai.service.NaturalLanguageToSqlService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class AIAssistantService {
     private final SqlAnalyzer sqlAnalyzer;
     private final ConversationService conversationService;
     private final DataSourceService dataSourceService;
+    private final NaturalLanguageToSqlService naturalLanguageToSqlService;
     private final SqlAnalysisLogMapper sqlAnalysisLogMapper;
     private final ObjectMapper objectMapper;
     
@@ -41,12 +43,14 @@ public class AIAssistantService {
                              SqlAnalyzer sqlAnalyzer,
                              ConversationService conversationService,
                              DataSourceService dataSourceService,
+                             NaturalLanguageToSqlService naturalLanguageToSqlService,
                              SqlAnalysisLogMapper sqlAnalysisLogMapper) {
         this.deepSeekClient = deepSeekClient;
         this.schemaAnalyzer = schemaAnalyzer;
         this.sqlAnalyzer = sqlAnalyzer;
         this.conversationService = conversationService;
         this.dataSourceService = dataSourceService;
+        this.naturalLanguageToSqlService = naturalLanguageToSqlService;
         this.sqlAnalysisLogMapper = sqlAnalysisLogMapper;
         this.objectMapper = new ObjectMapper();
     }
@@ -93,13 +97,22 @@ public class AIAssistantService {
                 // 1. 获取或创建对话
                 AIConversation conversation = getOrCreateConversation(request);
                 
-                // 2. 构建上下文消息
+                // 2. 检查是否是自然语言转SQL请求
+                if ("NATURAL_LANGUAGE_TO_SQL".equals(request.getAnalysisType()) && 
+                    request.getOriginalQuery() != null && 
+                    request.getDatasourceId() != null) {
+                    
+                    handleNaturalLanguageToSqlStream(conversation, request, sink);
+                    return;
+                }
+                
+                // 3. 构建上下文消息
                 List<ChatRequest.ChatMessage> messages = buildContextMessages(conversation, request);
                 
-                // 3. 保存用户消息
+                // 4. 保存用户消息
                 conversationService.saveMessage(conversation.getId(), MessageType.USER, request.getMessage());
                 
-                // 4. 调用流式AI接口
+                // 5. 调用流式AI接口
                 StringBuilder fullResponse = new StringBuilder();
                 
                 deepSeekClient.chatStream(messages)
@@ -427,6 +440,71 @@ public class AIAssistantService {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             return obj.toString();
+        }
+    }
+    
+    /**
+     * 处理自然语言转SQL的流式响应
+     */
+    private void handleNaturalLanguageToSqlStream(AIConversation conversation, AIAssistantRequest request, 
+                                                  reactor.core.publisher.FluxSink<String> sink) {
+        try {
+            log.info("开始处理自然语言转SQL请求，对话ID: {}, 数据源ID: {}", conversation.getId(), request.getDatasourceId());
+            
+            // 1. 保存用户消息（使用原始查询）
+            conversationService.saveMessage(conversation.getId(), MessageType.USER, request.getOriginalQuery());
+            
+            // 2. 调用自然语言转SQL服务，获取结果
+            var sqlResult = naturalLanguageToSqlService.generateSql(request.getOriginalQuery(), request.getDatasourceId());
+            
+            // 3. 构建流式响应内容
+            StringBuilder responseBuilder = new StringBuilder();
+            
+            // 构建格式化的响应内容
+            String formattedResponse = String.format(
+                "**自然语言查询：** %s\n\n**生成的SQL：**\n```sql\n%s\n```\n\n**说明：** %s\n\n**使用的表：** %s",
+                sqlResult.getOriginalQuery(),
+                sqlResult.getGeneratedSql(),
+                sqlResult.getExplanation(),
+                sqlResult.getUsedTables() != null ? String.join(", ", sqlResult.getUsedTables()) : "无"
+            );
+            
+            // 4. 模拟流式输出（逐字符发送）
+            char[] chars = formattedResponse.toCharArray();
+            for (int i = 0; i < chars.length; i++) {
+                try {
+                    String chunk = String.valueOf(chars[i]);
+                    responseBuilder.append(chunk);
+                    sink.next(chunk);
+                    
+                    // 控制输出速度，让用户看到流式效果
+                    if (i % 10 == 0) { // 每10个字符暂停一下
+                        Thread.sleep(50); // 暂停50毫秒
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            
+            // 5. 保存完整的AI响应
+            conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, responseBuilder.toString());
+            
+            // 6. 完成流式响应
+            sink.complete();
+            log.info("自然语言转SQL流式响应完成，对话ID: {}", conversation.getId());
+            
+        } catch (Exception e) {
+            log.error("处理自然语言转SQL流式请求失败", e);
+            
+            // 发送错误消息
+            String errorMessage = "抱歉，SQL生成失败。请检查您的查询或数据源配置。错误信息：" + e.getMessage();
+            sink.next(errorMessage);
+            
+            // 保存错误响应
+            conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, errorMessage);
+            
+            sink.complete();
         }
     }
 }

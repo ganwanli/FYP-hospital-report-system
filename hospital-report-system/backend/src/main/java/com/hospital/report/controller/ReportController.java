@@ -70,11 +70,70 @@ public class ReportController {
     }
 
     @GetMapping("/{id}")
-    public Result<ReportConfig> getReport(@PathVariable Long id) {
+    public Result<Map<String, Object>> getReport(@PathVariable Long id) {
         try {
             ReportConfig report = reportConfigService.getReportById(id);
             if (report != null) {
-                return Result.success(report);
+                // 创建返回的Map，包含原始报表数据和解析后的配置
+                Map<String, Object> result = new HashMap<>();
+                
+                // 复制所有原始字段
+                result.put("id", report.getId());
+                result.put("reportName", report.getReportName());
+                result.put("reportCode", report.getReportCode());
+                result.put("reportType", report.getReportType());
+                result.put("reportCategoryId", report.getReportCategoryId());
+                result.put("sqlTemplateId", report.getSqlTemplateId());
+                result.put("datasourceId", report.getDatasourceId());
+                result.put("reportConfig", report.getReportConfig());
+                result.put("chartConfig", report.getChartConfig());
+                result.put("exportConfig", report.getExportConfig());
+                result.put("cacheEnabled", report.getCacheEnabled());
+                result.put("cacheTimeout", report.getCacheTimeout());
+                result.put("refreshInterval", report.getRefreshInterval());
+                result.put("accessLevel", report.getAccessLevel());
+                result.put("description", report.getDescription());
+                result.put("version", report.getVersion());
+                result.put("viewCount", report.getViewCount());
+                result.put("lastViewTime", report.getLastViewTime());
+                result.put("isPublished", report.getIsPublished());
+                result.put("isActive", report.getIsActive());
+                result.put("isDeleted", report.getIsDeleted());
+                result.put("createdTime", report.getCreatedTime());
+                result.put("updatedTime", report.getUpdatedTime());
+                result.put("createdBy", report.getCreatedBy());
+                result.put("updatedBy", report.getUpdatedBy());
+                result.put("approvalStatus", report.getApprovalStatus());
+                result.put("submitTime", report.getSubmitTime());
+                result.put("auditTime", report.getAuditTime());
+                result.put("auditorId", report.getAuditorId());
+                result.put("auditComment", report.getAuditComment());
+                result.put("publishTime", report.getPublishTime());
+                result.put("unpublishTime", report.getUnpublishTime());
+                result.put("publisherId", report.getPublisherId());
+                result.put("approvedBy", report.getApprovedBy());
+                result.put("approvedTime", report.getApprovedTime());
+                result.put("departmentCode", report.getDepartmentCode());
+                result.put("businessType", report.getBusinessType());
+                result.put("usageType", report.getUsageType());
+                result.put("linkedReportId", report.getLinkedReportId());
+                result.put("triggerParamField", report.getTriggerParamField());
+                
+                // 解析chartConfig为parsedChartConfig
+                if (report.getChartConfig() != null && !report.getChartConfig().trim().isEmpty()) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        Object parsedConfig = objectMapper.readValue(report.getChartConfig(), Object.class);
+                        result.put("parsedChartConfig", parsedConfig);
+                    } catch (Exception e) {
+                        System.err.println("Failed to parse chartConfig for report " + id + ": " + e.getMessage());
+                        result.put("parsedChartConfig", new HashMap<>());
+                    }
+                } else {
+                    result.put("parsedChartConfig", new HashMap<>());
+                }
+                
+                return Result.success(result);
             } else {
                 return Result.error("Report not found");
             }
@@ -763,6 +822,162 @@ public class ReportController {
             return Result.success(history);
         } catch (Exception e) {
             return Result.error("获取审核历史失败: " + e.getMessage());
+        }
+    }
+
+    // 子报表关联管理
+    /**
+     * 设置报表的子报表关联
+     */
+    @PostMapping("/{parentReportId}/linked-report")
+    public Result<ReportConfig> setLinkedReport(
+            @PathVariable Long parentReportId,
+            @RequestParam Long childReportId,
+            @RequestParam String triggerParamField) {
+        try {
+            ReportConfig updated = reportConfigService.setLinkedReport(parentReportId, childReportId, triggerParamField);
+            return Result.success(updated);
+        } catch (Exception e) {
+            return Result.error("Failed to set linked report: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 移除报表的子报表关联
+     */
+    @DeleteMapping("/{parentReportId}/linked-report")
+    public Result<ReportConfig> removeLinkedReport(@PathVariable Long parentReportId) {
+        try {
+            ReportConfig updated = reportConfigService.removeLinkedReport(parentReportId);
+            return Result.success(updated);
+        } catch (Exception e) {
+            return Result.error("Failed to remove linked report: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取报表的子报表配置
+     */
+    @GetMapping("/{parentReportId}/linked-report")
+    public Result<Map<String, Object>> getLinkedReport(@PathVariable Long parentReportId) {
+        try {
+            ReportConfig linkedReport = reportConfigService.getLinkedReport(parentReportId);
+            if (linkedReport != null) {
+                // 创建返回的Map，包含原始报表数据和解析后的配置
+                Map<String, Object> result = new HashMap<>();
+                
+                // 复制所有原始字段
+                result.put("id", linkedReport.getId());
+                result.put("reportName", linkedReport.getReportName());
+                result.put("reportCode", linkedReport.getReportCode());
+                result.put("reportType", linkedReport.getReportType());
+                result.put("reportCategoryId", linkedReport.getReportCategoryId());
+                result.put("sqlTemplateId", linkedReport.getSqlTemplateId());
+                result.put("datasourceId", linkedReport.getDatasourceId());
+                result.put("reportConfig", linkedReport.getReportConfig());
+                result.put("chartConfig", linkedReport.getChartConfig());
+                result.put("exportConfig", linkedReport.getExportConfig());
+                result.put("cacheEnabled", linkedReport.getCacheEnabled());
+                result.put("cacheTimeout", linkedReport.getCacheTimeout());
+                result.put("refreshInterval", linkedReport.getRefreshInterval());
+                result.put("accessLevel", linkedReport.getAccessLevel());
+                result.put("description", linkedReport.getDescription());
+                result.put("version", linkedReport.getVersion());
+                result.put("viewCount", linkedReport.getViewCount());
+                result.put("lastViewTime", linkedReport.getLastViewTime());
+                result.put("isPublished", linkedReport.getIsPublished());
+                result.put("isActive", linkedReport.getIsActive());
+                result.put("isDeleted", linkedReport.getIsDeleted());
+                result.put("createdTime", linkedReport.getCreatedTime());
+                result.put("updatedTime", linkedReport.getUpdatedTime());
+                result.put("createdBy", linkedReport.getCreatedBy());
+                result.put("updatedBy", linkedReport.getUpdatedBy());
+                result.put("approvalStatus", linkedReport.getApprovalStatus());
+                result.put("submitTime", linkedReport.getSubmitTime());
+                result.put("auditTime", linkedReport.getAuditTime());
+                result.put("auditorId", linkedReport.getAuditorId());
+                result.put("auditComment", linkedReport.getAuditComment());
+                result.put("publishTime", linkedReport.getPublishTime());
+                result.put("unpublishTime", linkedReport.getUnpublishTime());
+                result.put("publisherId", linkedReport.getPublisherId());
+                result.put("approvedBy", linkedReport.getApprovedBy());
+                result.put("approvedTime", linkedReport.getApprovedTime());
+                result.put("departmentCode", linkedReport.getDepartmentCode());
+                result.put("businessType", linkedReport.getBusinessType());
+                result.put("usageType", linkedReport.getUsageType());
+                result.put("linkedReportId", linkedReport.getLinkedReportId());
+                result.put("triggerParamField", linkedReport.getTriggerParamField());
+                
+                // 解析chartConfig为parsedChartConfig
+                if (linkedReport.getChartConfig() != null && !linkedReport.getChartConfig().trim().isEmpty()) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        Object parsedConfig = objectMapper.readValue(linkedReport.getChartConfig(), Object.class);
+                        result.put("parsedChartConfig", parsedConfig);
+                    } catch (Exception e) {
+                        System.err.println("Failed to parse chartConfig for linked report " + parentReportId + ": " + e.getMessage());
+                        result.put("parsedChartConfig", new HashMap<>());
+                    }
+                } else {
+                    result.put("parsedChartConfig", new HashMap<>());
+                }
+                
+                return Result.success(result);
+            } else {
+                return Result.error("No linked report found");
+            }
+        } catch (Exception e) {
+            return Result.error("Failed to get linked report: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 创建报表的子报表副本
+     */
+    @PostMapping("/create-linked-report/{parentReportId}")
+    public Result<ReportConfig> createLinkedReport(
+            @PathVariable Long parentReportId,
+            @RequestParam String childReportName,
+            @RequestParam String triggerParamField,
+            @RequestParam Long createdBy) {
+        try {
+            ReportConfig linkedReport = reportConfigService.createLinkedReport(
+                parentReportId, childReportName, triggerParamField, createdBy);
+            return Result.success(linkedReport);
+        } catch (Exception e) {
+            return Result.error("Failed to create linked report: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 创建关联报表并同时保存父报表和子报表数据
+     */
+    @PostMapping("/create-linked-report-with-parent")
+    public Result<ReportConfig> createLinkedReportWithParent(@RequestBody Map<String, Object> requestData) {
+        try {
+            // 安全地处理parentReportId，可能为null或0
+            Long parentReportId = null;
+            if (requestData.get("parentReportId") != null && 
+                !requestData.get("parentReportId").toString().equals("0") && 
+                !requestData.get("parentReportId").toString().equals("null")) {
+                parentReportId = Long.valueOf(requestData.get("parentReportId").toString());
+            }
+            
+            String triggerParamField = requestData.get("triggerParamField").toString();
+            Long createdBy = Long.valueOf(requestData.get("createdBy").toString());
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> childReportConfig = (Map<String, Object>) requestData.get("childReportConfig");
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parentReportConfig = (Map<String, Object>) requestData.get("parentReportConfig");
+            
+            ReportConfig linkedReport = reportConfigService.createLinkedReportWithParent(
+                parentReportId, triggerParamField, childReportConfig, parentReportConfig, createdBy);
+            
+            return Result.success(linkedReport);
+        } catch (Exception e) {
+            return Result.error("Failed to create linked report with parent: " + e.getMessage());
         }
     }
 }

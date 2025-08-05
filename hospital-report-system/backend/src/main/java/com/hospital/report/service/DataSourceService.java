@@ -12,6 +12,8 @@ public interface DataSourceService extends IService<DataSource> {
 
     DataSource findByCode(String code);
 
+    DataSource findById(String code);
+
     DataSource findDefaultDataSource();
 
     boolean testConnection(DataSource dataSource);

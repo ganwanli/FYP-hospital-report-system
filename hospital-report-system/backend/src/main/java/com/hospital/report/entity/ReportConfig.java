@@ -134,6 +134,13 @@ public class ReportConfig {
     @Column(name = "usage_type", length = 20, columnDefinition = "varchar(20) DEFAULT NULL COMMENT '用途分类类别'")
     private String usageType;
 
+    // 子报表链接配置字段
+    @Column(name = "linked_report_id", columnDefinition = "bigint DEFAULT NULL COMMENT '关联的子报表ID'")
+    private Long linkedReportId;
+
+    @Column(name = "trigger_param_field", length = 100, columnDefinition = "varchar(100) DEFAULT NULL COMMENT '触发参数字段名(如CASE_NO)'")
+    private String triggerParamField;
+
     // 外键关联 - 如果需要的话可以取消注释
     /*
     @ManyToOne(fetch = FetchType.LAZY)

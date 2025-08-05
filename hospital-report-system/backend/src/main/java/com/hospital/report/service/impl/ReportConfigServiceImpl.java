@@ -568,4 +568,296 @@ public class ReportConfigServiceImpl implements ReportConfigService {
 
         log.info("View count for report {} reset to 0", reportId);
     }
+
+    // 子报表关联管理实现
+    @Override
+    @Transactional
+    public ReportConfig setLinkedReport(Long parentReportId, Long childReportId, String triggerParamField) {
+        log.info("Setting linked report: parent={}, child={}, triggerField={}", parentReportId, childReportId, triggerParamField);
+        
+        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        
+        ReportConfig childReport = reportConfigRepository.findById(childReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Child report not found: " + childReportId));
+        
+        // 设置关联关系
+        parentReport.setLinkedReportId(childReportId);
+        parentReport.setTriggerParamField(triggerParamField);
+        parentReport.setUpdatedTime(LocalDateTime.now());
+        
+        ReportConfig saved = reportConfigRepository.save(parentReport);
+        log.info("Successfully set linked report for parent report: {}", parentReportId);
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public ReportConfig removeLinkedReport(Long parentReportId) {
+        log.info("Removing linked report for parent: {}", parentReportId);
+        
+        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        
+        parentReport.setLinkedReportId(null);
+        parentReport.setTriggerParamField(null);
+        parentReport.setUpdatedTime(LocalDateTime.now());
+        
+        ReportConfig saved = reportConfigRepository.save(parentReport);
+        log.info("Successfully removed linked report for parent report: {}", parentReportId);
+        return saved;
+    }
+
+    @Override
+    public ReportConfig getLinkedReport(Long parentReportId) {
+        log.info("Getting linked report for parent: {}", parentReportId);
+        
+        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        
+        if (parentReport.getLinkedReportId() == null) {
+            return null;
+        }
+        
+        return reportConfigRepository.findById(parentReport.getLinkedReportId())
+            .orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public ReportConfig createLinkedReport(Long parentReportId, String childReportName, String triggerParamField, Long createdBy) {
+        log.info("Creating linked report: parent={}, name={}, triggerField={}, createdBy={}", 
+                 parentReportId, childReportName, triggerParamField, createdBy);
+        
+        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        
+        // 创建子报表配置（基于父报表配置）
+        ReportConfig childReport = new ReportConfig();
+        
+        // 重要：确保子报表是新记录，不设置ID
+        childReport.setId(null);
+        
+        childReport.setReportName(childReportName);
+        childReport.setReportCode(generateUniqueReportCode(parentReport.getReportCode() + "_LINKED"));
+        childReport.setReportType(parentReport.getReportType());
+        childReport.setReportCategoryId(parentReport.getReportCategoryId());
+        childReport.setSqlTemplateId(parentReport.getSqlTemplateId());
+        childReport.setDatasourceId(parentReport.getDatasourceId());
+        
+        // 复制报表配置
+        childReport.setReportConfig(parentReport.getReportConfig());
+        childReport.setChartConfig(parentReport.getChartConfig());
+        childReport.setExportConfig(parentReport.getExportConfig());
+        
+        // 设置其他属性
+        childReport.setCacheEnabled(parentReport.getCacheEnabled());
+        childReport.setCacheTimeout(parentReport.getCacheTimeout());
+        childReport.setRefreshInterval(parentReport.getRefreshInterval());
+        childReport.setAccessLevel("PRIVATE"); // 子报表默认私有
+        childReport.setDescription("Linked report for: " + parentReport.getReportName());
+        childReport.setVersion("1.0");
+        childReport.setIsPublished(0);
+        childReport.setIsActive(1);
+        childReport.setIsDeleted(0);
+        childReport.setCreatedBy(createdBy);
+        childReport.setUpdatedBy(createdBy);
+        
+        // 重要：确保子报表不会继承父报表的关联设置
+        childReport.setLinkedReportId(null);
+        childReport.setTriggerParamField(null);
+        
+        // 保存子报表
+        ReportConfig savedChildReport = reportConfigRepository.save(childReport);
+        
+        // 直接在当前事务中更新父报表的关联关系，避免重新获取实体
+        parentReport.setLinkedReportId(savedChildReport.getId());
+        parentReport.setTriggerParamField(triggerParamField);
+        parentReport.setUpdatedTime(LocalDateTime.now());
+        reportConfigRepository.save(parentReport);
+        
+        log.info("Successfully created linked report with ID: {} and linked to parent: {}", savedChildReport.getId(), parentReportId);
+        return savedChildReport;
+    }
+
+    @Override
+    @Transactional
+    public ReportConfig createLinkedReportWithParent(Long parentReportId, String triggerParamField, 
+                                                   Map<String, Object> childReportConfig, 
+                                                   Map<String, Object> parentReportConfig, 
+                                                   Long createdBy) {
+        log.info("Creating linked report with parent data - parentReportId: {}, triggerParamField: {}, createdBy: {}", 
+                 parentReportId, triggerParamField, createdBy);
+        
+        ReportConfig parentReport;
+        
+        // 1. 处理父报表 - 检查是否为新创建的报表
+        if (parentReportId == null || parentReportId == 0) {
+            // 创建新的父报表
+            if (parentReportConfig == null) {
+                throw new IllegalArgumentException("Parent report configuration is required when creating new parent report");
+            }
+            
+            log.info("Creating new parent report");
+            parentReport = new ReportConfig();
+            parentReport.setId(null); // 确保是新记录
+            updateReportFromMap(parentReport, parentReportConfig);
+            
+            // 设置创建和更新信息
+            parentReport.setCreatedBy(createdBy);
+            parentReport.setUpdatedBy(createdBy);
+            parentReport.setCreatedTime(LocalDateTime.now());
+            parentReport.setUpdatedTime(LocalDateTime.now());
+            parentReport.setIsDeleted(0);
+            
+            // 先保存父报表以获取ID
+            parentReport = reportConfigRepository.save(parentReport);
+            log.info("New parent report created with ID: {}", parentReport.getId());
+            
+        } else {
+            // 更新现有的父报表
+            parentReport = reportConfigRepository.findById(parentReportId)
+                .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+            
+            if (parentReportConfig != null) {
+                log.info("Updating existing parent report with new configuration");
+                updateReportFromMap(parentReport, parentReportConfig);
+                parentReport.setUpdatedBy(createdBy);
+                parentReport.setUpdatedTime(LocalDateTime.now());
+                parentReport = reportConfigRepository.save(parentReport);
+                log.info("Parent report updated successfully");
+            }
+        }
+        
+        // 2. 创建子报表
+        ReportConfig childReport = new ReportConfig();
+        
+        // 重要：确保子报表是新记录，不设置ID
+        childReport.setId(null);
+        
+        // 从配置数据中设置子报表属性
+        updateReportFromMap(childReport, childReportConfig);
+        
+        // 设置子报表特有的关联信息
+        childReport.setLinkedReportId(null); // 子报表本身不指向其他报表
+        childReport.setTriggerParamField(null); // 子报表本身不包含触发参数
+        
+        // 设置创建和更新信息
+        childReport.setCreatedBy(createdBy);
+        childReport.setUpdatedBy(createdBy);
+        childReport.setCreatedTime(LocalDateTime.now());
+        childReport.setUpdatedTime(LocalDateTime.now());
+        childReport.setIsDeleted(0);
+        
+        // 保存子报表
+        ReportConfig savedChildReport = reportConfigRepository.save(childReport);
+        log.info("Child report created with ID: {}", savedChildReport.getId());
+        
+        // 3. 更新父报表的关联关系
+        parentReport.setLinkedReportId(savedChildReport.getId());
+        parentReport.setTriggerParamField(triggerParamField);
+        parentReport.setUpdatedTime(LocalDateTime.now());
+        parentReport = reportConfigRepository.save(parentReport);
+        
+        log.info("Successfully created linked report with parent data - childId: {}, parentId: {}", 
+                savedChildReport.getId(), parentReport.getId());
+        return savedChildReport;
+    }
+    
+    /**
+     * 从Map配置数据更新ReportConfig实体
+     */
+    private void updateReportFromMap(ReportConfig report, Map<String, Object> configMap) {
+        if (configMap.get("reportName") != null) {
+            report.setReportName(configMap.get("reportName").toString());
+        }
+        if (configMap.get("reportCode") != null) {
+            String requestedCode = configMap.get("reportCode").toString();
+            // 确保报表代码唯一性
+            String uniqueCode = generateUniqueReportCode(requestedCode);
+            report.setReportCode(uniqueCode);
+        }
+        if (configMap.get("description") != null) {
+            report.setDescription(configMap.get("description").toString());
+        }
+        if (configMap.get("reportType") != null) {
+            report.setReportType(configMap.get("reportType").toString());
+        }
+        if (configMap.get("accessLevel") != null) {
+            report.setAccessLevel(configMap.get("accessLevel").toString());
+        }
+        if (configMap.get("businessType") != null) {
+            report.setBusinessType(configMap.get("businessType").toString());
+        }
+        if (configMap.get("departmentCode") != null) {
+            report.setDepartmentCode(configMap.get("departmentCode").toString());
+        }
+        if (configMap.get("usageType") != null) {
+            report.setUsageType(configMap.get("usageType").toString());
+        }
+        if (configMap.get("version") != null) {
+            report.setVersion(configMap.get("version").toString());
+        }
+        if (configMap.get("sqlTemplateId") != null) {
+            report.setSqlTemplateId(Long.valueOf(configMap.get("sqlTemplateId").toString()));
+        }
+        if (configMap.get("datasourceId") != null) {
+            report.setDatasourceId(Long.valueOf(configMap.get("datasourceId").toString()));
+        }
+        if (configMap.get("categoryId") != null && configMap.get("categoryId") != "") {
+            report.setReportCategoryId(Long.valueOf(configMap.get("categoryId").toString()));
+        }
+//        if (configMap.get("isPublished") != null) {
+//            report.setIsPublished(Boolean.valueOf(configMap.get("isPublic").toString()) ? 1 : 0);
+//        }
+        if (configMap.get("isPublished") != null) {
+            report.setIsPublished(Integer.valueOf(configMap.get("isPublished").toString()));
+        }
+        if (configMap.get("isActive") != null) {
+            report.setIsActive(Integer.valueOf(configMap.get("isActive").toString()));
+        }
+        if (configMap.get("approvalStatus") != null) {
+            report.setApprovalStatus(Integer.valueOf(configMap.get("approvalStatus").toString()));
+        }
+        if (configMap.get("chartConfig") != null) {
+            report.setChartConfig(configMap.get("chartConfig").toString());
+        }
+        
+//        // 处理tags - 可能是List或字符串
+//        if (configMap.get("tags") != null) {
+//            Object tagsObj = configMap.get("tags");
+//            if (tagsObj instanceof List) {
+//                @SuppressWarnings("unchecked")
+//                List<String> tagsList = (List<String>) tagsObj;
+//                report.setTags(String.join(",", tagsList));
+//            } else {
+//                report.setTags(tagsObj.toString());
+//            }
+//        }
+    }
+    
+    /**
+     * 生成唯一的报表代码
+     * @param baseCode 基础代码
+     * @return 唯一的报表代码
+     */
+    private String generateUniqueReportCode(String baseCode) {
+        String uniqueCode = baseCode;
+        int counter = 1;
+        
+        // 检查代码是否已存在，如果存在则添加序号
+        while (reportConfigRepository.existsByReportCode(uniqueCode)) {
+            uniqueCode = baseCode + "_" + counter;
+            counter++;
+            
+            // 防止无限循环，最多尝试1000次
+            if (counter > 1000) {
+                // 使用UUID确保唯一性
+                uniqueCode = baseCode + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+                break;
+            }
+        }
+        
+        return uniqueCode;
+    }
 }

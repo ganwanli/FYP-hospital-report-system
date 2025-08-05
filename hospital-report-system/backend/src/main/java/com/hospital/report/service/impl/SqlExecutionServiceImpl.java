@@ -44,27 +44,31 @@ public class SqlExecutionServiceImpl implements SqlExecutionService {
             // 根据数据源代码获取数据源配置
             DataSource dataSourceConfig = dataSourceService.findByCode(databaseType);
             if (dataSourceConfig == null) {
-                log.error("Data source configuration not found: {}", databaseType);
-                result.put("success", false);
-                result.put("message", "Data source configuration not found: " + databaseType);
-                result.put("data", new ArrayList<>());
-                result.put("columns", new ArrayList<>());
-                result.put("rowCount", 0);
-                result.put("executionTime", "0.000s");
-                return result;
+                dataSourceConfig = dataSourceService.findById(databaseType);
+                if (dataSourceConfig == null) {
+                    log.error("Data source configuration not found: {}", databaseType);
+                    result.put("success", false);
+                    result.put("message", "Data source configuration not found: " + databaseType);
+                    result.put("data", new ArrayList<>());
+                    result.put("columns", new ArrayList<>());
+                    result.put("rowCount", 0);
+                    result.put("executionTime", "0.000s");
+                    return result;
+                }
             }
 
             // 获取实际的数据源连接
-            javax.sql.DataSource actualDataSource = dataSourceManager.getDataSource(databaseType);
+            javax.sql.DataSource actualDataSource = dataSourceManager.getDataSource(dataSourceConfig.getDatasourceCode());
             if (actualDataSource == null) {
-                log.error("Data source connection not found: {}", databaseType);
-                result.put("success", false);
-                result.put("message", "Data source connection not found: " + databaseType);
-                result.put("data", new ArrayList<>());
-                result.put("columns", new ArrayList<>());
-                result.put("rowCount", 0);
-                result.put("executionTime", "0.000s");
-                return result;
+                    log.error("Data source connection not found: {}", databaseType);
+                    result.put("success", false);
+                    result.put("message", "Data source connection not found: " + databaseType);
+                    result.put("data", new ArrayList<>());
+                    result.put("columns", new ArrayList<>());
+                    result.put("rowCount", 0);
+                    result.put("executionTime", "0.000s");
+                    return result;
+
             }
 
             // 执行SQL查询
@@ -289,10 +293,10 @@ public class SqlExecutionServiceImpl implements SqlExecutionService {
      */
     private String processSqlParameters(String sqlContent, Map<String, Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
-            return sqlContent;
+            return cleanSqlContent(sqlContent);
         }
 
-        String processedSql = sqlContent;
+        String processedSql = cleanSqlContent(sqlContent);
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             String placeholder = "#{" + entry.getKey() + "}";
             if (processedSql.contains(placeholder)) {
@@ -301,6 +305,41 @@ public class SqlExecutionServiceImpl implements SqlExecutionService {
         }
 
         return processedSql;
+    }
+
+    /**
+     * 清理SQL内容，移除不必要的转义字符和格式化问题
+     */
+    private String cleanSqlContent(String sqlContent) {
+        if (sqlContent == null || sqlContent.trim().isEmpty()) {
+            return sqlContent;
+        }
+
+        String cleanedSql = sqlContent;
+
+        // 移除常见的转义字符和格式化问题
+        cleanedSql = cleanedSql.replace("\\ n", "\n");  // 修复换行符
+        cleanedSql = cleanedSql.replace("\\n", "\n");   // 修复换行符
+        cleanedSql = cleanedSql.replace("\\ t", "\t");  // 修复制表符
+        cleanedSql = cleanedSql.replace("\\t", "\t");   // 修复制表符
+        cleanedSql = cleanedSql.replace("\\ r", "\r");  // 修复回车符
+        cleanedSql = cleanedSql.replace("\\r", "\r");   // 修复回车符
+
+        // 移除字段名前的反斜杠
+        cleanedSql = cleanedSql.replaceAll("\\\\ ([a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*)", " $1");  // 修复 \ table.column
+        cleanedSql = cleanedSql.replaceAll("\\\\ ([a-zA-Z_][a-zA-Z0-9_]*)", " $1");  // 修复 \ column
+
+        // 移除多余的空格和格式化字符
+        cleanedSql = cleanedSql.replaceAll("\\s+", " ");  // 将多个空格替换为单个空格
+        cleanedSql = cleanedSql.trim();  // 移除首尾空格
+
+        // 修复SQL关键字格式
+        cleanedSql = cleanedSql.replaceAll("(?i)\\bFROM\\s+\\\\ n\\s+\\\\", "FROM ");
+        cleanedSql = cleanedSql.replaceAll("(?i)\\bLEFT\\s+JOIN", "LEFT JOIN");
+        cleanedSql = cleanedSql.replaceAll("(?i)\\bINNER\\s+JOIN", "INNER JOIN");
+        cleanedSql = cleanedSql.replaceAll("(?i)\\bRIGHT\\s+JOIN", "RIGHT JOIN");
+
+        return cleanedSql;
     }
 
     /**

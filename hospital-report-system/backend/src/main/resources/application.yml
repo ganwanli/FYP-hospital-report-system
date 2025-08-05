@@ -164,6 +164,7 @@ app:
       - /sql-execution/**
       - /sql-templates/**
       - /ai-assistant/**
+      - /ai-schema/**
     # 跨域配置
     cors:
       allowed-origins: 

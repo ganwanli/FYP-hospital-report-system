@@ -132,4 +132,52 @@ public interface ReportConfigService {
      * @param reportId 报表ID
      */
     void resetViewCount(int reportId);
+
+    // 子报表关联管理
+    /**
+     * 设置报表的子报表关联
+     * @param parentReportId 父报表ID
+     * @param childReportId 子报表ID
+     * @param triggerParamField 触发参数字段名
+     * @return 更新后的父报表配置
+     */
+    ReportConfig setLinkedReport(Long parentReportId, Long childReportId, String triggerParamField);
+
+    /**
+     * 移除报表的子报表关联
+     * @param parentReportId 父报表ID
+     * @return 更新后的父报表配置
+     */
+    ReportConfig removeLinkedReport(Long parentReportId);
+
+    /**
+     * 获取报表的子报表配置
+     * @param parentReportId 父报表ID
+     * @return 子报表配置，如果没有关联则返回null
+     */
+    ReportConfig getLinkedReport(Long parentReportId);
+
+    /**
+     * 创建报表的子报表副本
+     * @param parentReportId 父报表ID
+     * @param childReportName 子报表名称
+     * @param triggerParamField 触发参数字段名
+     * @param createdBy 创建人ID
+     * @return 创建的子报表配置
+     */
+    ReportConfig createLinkedReport(Long parentReportId, String childReportName, String triggerParamField, Long createdBy);
+
+    /**
+     * 创建关联报表并同时保存父报表和子报表数据
+     * @param parentReportId 父报表ID
+     * @param triggerParamField 触发参数字段名
+     * @param childReportConfig 子报表配置数据
+     * @param parentReportConfig 父报表配置数据
+     * @param createdBy 创建人ID
+     * @return 创建的子报表配置
+     */
+    ReportConfig createLinkedReportWithParent(Long parentReportId, String triggerParamField, 
+                                            Map<String, Object> childReportConfig, 
+                                            Map<String, Object> parentReportConfig, 
+                                            Long createdBy);
 }

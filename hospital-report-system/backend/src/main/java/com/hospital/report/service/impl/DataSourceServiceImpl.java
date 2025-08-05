@@ -69,6 +69,11 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
     }
 
     @Override
+    public DataSource findById(String Id) {
+        return dataSourceMapper.findById(Id);
+    }
+
+    @Override
     public DataSource findDefaultDataSource() {
         return dataSourceMapper.findDefaultDataSource();
     }
