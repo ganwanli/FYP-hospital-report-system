@@ -17,7 +17,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 @RestController
-@RequestMapping("/api/reports/view")
+@RequestMapping("/reports/view")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ReportViewController {

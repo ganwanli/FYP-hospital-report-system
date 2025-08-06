@@ -29,6 +29,7 @@
         <fastjson.version>2.0.40</fastjson.version>
         <hutool.version>5.8.20</hutool.version>
         <knife4j.version>4.1.0</knife4j.version>
+        <langchain4j.version>0.26.1</langchain4j.version>
     </properties>
     
     <dependencies>
@@ -186,6 +187,20 @@
         </dependency>
         
         <!-- AI Assistant Dependencies -->
+        <!-- LangChain4J Core -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-core</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        
+        <!-- LangChain4J DashScope (千问) -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-dashscope</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        
         <!-- HTTP Client for AI API calls -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -202,6 +217,13 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
+        </dependency>
+
+        <!-- Milvus SDK -->
+        <dependency>
+            <groupId>io.milvus</groupId>
+            <artifactId>milvus-sdk-java</artifactId>
+            <version>2.3.4</version>
         </dependency>
         
         <!-- Test Dependencies -->

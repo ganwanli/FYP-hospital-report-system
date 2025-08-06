@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/dictionary/categories")
+@RequestMapping("/dictionary/categories")
 @RequiredArgsConstructor
 public class DictionaryCategoryController {
 

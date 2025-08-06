@@ -98,6 +98,21 @@ public class SqlTemplate {
     @TableField("change_log")
     private String changeLog;
 
+    @TableField("complexity")
+    private Integer complexity;
+
+    @TableField("execute_count")
+    private Long executeCount;
+
+    @TableField("avg_execute_time")
+    private Double avgExecuteTime;
+
+    @TableField(exist = false)
+    private List<SqlField> fields;
+
+    @TableField(exist = false)
+    private Long id; // Alias for templateId for compatibility
+
     @TableField(exist = false)
     private List<SqlTemplateParameter> parameters;
 
@@ -112,4 +127,47 @@ public class SqlTemplate {
 
     @TableField(exist = false)
     private String approvedByName;
+
+    // Getter method for compatibility with SqlKnowledgeBaseService
+    public Long getId() {
+        return this.templateId;
+    }
+
+    // Setter method for compatibility
+    public void setId(Long id) {
+        this.templateId = id;
+    }
+
+    // Additional getters for compatibility with SqlKnowledgeBaseService
+    public String getDescription() {
+        return this.templateDescription;
+    }
+
+    public String getSqlContent() {
+        return this.templateContent;
+    }
+
+    // Static inner class for field information
+    public static class SqlField {
+        private String fieldName;
+        private String fieldType;
+        private String description;
+
+        public SqlField() {}
+
+        public SqlField(String fieldName, String fieldType, String description) {
+            this.fieldName = fieldName;
+            this.fieldType = fieldType;
+            this.description = description;
+        }
+
+        public String getFieldName() { return fieldName; }
+        public void setFieldName(String fieldName) { this.fieldName = fieldName; }
+
+        public String getFieldType() { return fieldType; }
+        public void setFieldType(String fieldType) { this.fieldType = fieldType; }
+
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+    }
 }

@@ -3,6 +3,7 @@ package com.hospital.report.ai.controller;
 import com.hospital.report.ai.service.DatabaseSchemaService;
 import com.hospital.report.ai.service.NaturalLanguageToSqlService;
 import com.hospital.report.ai.service.VectorSearchService;
+import com.hospital.report.ai.service.VectorStoreService;
 import com.hospital.report.common.Result;
 import com.hospital.report.entity.DataSource;
 import com.hospital.report.service.DataSourceService;
@@ -59,9 +60,9 @@ public class DatabaseSchemaController {
      * 获取数据源的schema统计信息
      */
     @GetMapping("/statistics/{datasourceId}")
-    public Result<DatabaseSchemaService.SchemaStatistics> getSchemaStatistics(@PathVariable Long datasourceId) {
+    public Result<VectorStoreService.SchemaStatistics> getSchemaStatistics(@PathVariable Long datasourceId) {
         try {
-            DatabaseSchemaService.SchemaStatistics stats = databaseSchemaService.getSchemaStatistics(datasourceId);
+            VectorStoreService.SchemaStatistics stats = databaseSchemaService.getSchemaStatistics(datasourceId);
             return Result.success(stats);
         } catch (Exception e) {
             log.error("获取schema统计信息失败: {}", e.getMessage(), e);

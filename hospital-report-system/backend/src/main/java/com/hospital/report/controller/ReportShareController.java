@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/reports/share")
+@RequestMapping("/reports/share")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ReportShareController {

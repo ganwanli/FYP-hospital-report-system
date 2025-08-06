@@ -6,6 +6,7 @@ import com.hospital.report.ai.entity.dto.AIAssistantRequest;
 import com.hospital.report.ai.entity.dto.AIAssistantResponse;
 import com.hospital.report.ai.entity.dto.ConversationStats;
 import com.hospital.report.ai.enums.AnalysisType;
+import com.hospital.report.ai.enums.MessageType;
 import com.hospital.report.ai.service.AIAssistantService;
 import com.hospital.report.ai.service.ConversationService;
 import com.hospital.report.common.Result;
@@ -332,6 +333,36 @@ public class AIAssistantController {
         } catch (Exception e) {
             log.error("测试AI连接失败", e);
             return Result.error("AI服务连接失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/save-search-conversation")
+    @Operation(summary = "保存SQL Asset搜索对话", description = "保存SQL Asset搜索的用户查询和AI回复")
+    public Result<Map<String, Object>> saveSearchConversation(@RequestBody Map<String, Object> request) {
+        try {
+            Long conversationId = Long.valueOf(request.get("conversationId").toString());
+            String userQuery = request.get("userQuery").toString();
+            String aiResponse = request.get("aiResponse").toString();
+            
+            // 保存用户查询消息
+            conversationService.saveMessage(conversationId, 
+                MessageType.USER, 
+                userQuery);
+            
+            // 保存AI回复消息
+            conversationService.saveMessage(conversationId, 
+                MessageType.ASSISTANT, 
+                aiResponse);
+            
+            Map<String, Object> result = Map.of(
+                "success", true,
+                "message", "搜索对话保存成功"
+            );
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("保存搜索对话失败", e);
+            return Result.error("保存搜索对话失败: " + e.getMessage());
         }
     }
 }

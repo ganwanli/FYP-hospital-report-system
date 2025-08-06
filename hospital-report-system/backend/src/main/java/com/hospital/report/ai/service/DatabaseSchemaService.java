@@ -1,199 +1,214 @@
 package com.hospital.report.ai.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.hospital.report.ai.config.MilvusConfig;
 import com.hospital.report.ai.entity.DatabaseSchema;
-import com.hospital.report.ai.entity.TableRelation;
-import com.hospital.report.ai.mapper.DatabaseSchemaMapper;
-import com.hospital.report.ai.mapper.TableRelationMapper;
 import com.hospital.report.entity.DataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 数据库Schema管理服务
+ * 数据库Schema管理服务 - 纯Milvus向量存储架构
  */
 @Service
 @Slf4j
 public class DatabaseSchemaService {
 
     @Autowired
-    private DatabaseSchemaMapper databaseSchemaMapper;
-    
-    @Autowired
-    private TableRelationMapper tableRelationMapper;
-    
-    @Autowired
     private DatabaseMetadataExtractor metadataExtractor;
     
     @Autowired
     private EmbeddingService embeddingService;
+    
+    @Autowired
+    private VectorStoreService vectorStoreService;
 
     /**
-     * 为数据源创建或更新schema向量数据
+     * 为数据源创建schema向量数据（纯Milvus存储）
      */
     @Transactional
     public void createOrUpdateSchemaVectors(DataSource dataSource) {
-        log.info("开始为数据源 {} 创建schema向量数据", dataSource.getDatasourceName());
+        log.info("开始为数据源 {} 创建schema向量数据（纯Milvus存储）", dataSource.getDatasourceName());
         
         try {
-            // 1. 清除现有数据
-            clearExistingData(dataSource.getId());
+            // 1. 清除Milvus中的现有数据
+            clearExistingDataFromMilvus(dataSource.getId());
             
             // 2. 提取数据库元数据
             List<DatabaseSchema> schemas = metadataExtractor.extractDatabaseSchema(dataSource);
-            List<TableRelation> relations = metadataExtractor.extractTableRelations(dataSource);
             
-            // 3. 生成向量嵌入
+            if (schemas.isEmpty()) {
+                log.warn("数据源 {} 没有提取到schema信息", dataSource.getDatasourceName());
+                return;
+            }
+            
+            log.info("提取到 {} 个schema记录", schemas.size());
+            
+            // 3. 生成向量嵌入并直接存储到Milvus
             embeddingService.generateEmbeddingsForSchemas(schemas);
             
-            // 4. 批量保存schema数据
-            for (DatabaseSchema schema : schemas) {
-                databaseSchemaMapper.insert(schema);
-            }
-            
-            // 5. 批量保存关系数据
-            for (TableRelation relation : relations) {
-                tableRelationMapper.insert(relation);
-            }
-            
-            log.info("成功为数据源 {} 创建了 {} 个schema记录和 {} 个关系记录", 
-                dataSource.getDatasourceName(), schemas.size(), relations.size());
+            log.info("成功为数据源 {} 创建了 {} 个schema向量记录（纯Milvus存储）", 
+                dataSource.getDatasourceName(), schemas.size());
                 
         } catch (Exception e) {
             log.error("为数据源 {} 创建schema向量数据失败: {}", dataSource.getDatasourceName(), e.getMessage(), e);
             throw new RuntimeException("Failed to create schema vectors for datasource: " + dataSource.getDatasourceName(), e);
         }
     }
-
+    
     /**
-     * 清除指定数据源的现有schema数据
+     * 清除指定数据源在Milvus中的现有schema数据
      */
-    private void clearExistingData(Long datasourceId) {
-        log.info("清除数据源 {} 的现有schema数据", datasourceId);
+    private void clearExistingDataFromMilvus(Long datasourceId) {
+        log.info("清除数据源 {} 在Milvus中的现有schema数据", datasourceId);
         
-        QueryWrapper<DatabaseSchema> schemaQuery = new QueryWrapper<>();
-        schemaQuery.eq("datasource_id", datasourceId);
-        databaseSchemaMapper.delete(schemaQuery);
-        
-        QueryWrapper<TableRelation> relationQuery = new QueryWrapper<>();
-        relationQuery.eq("datasource_id", datasourceId);
-        tableRelationMapper.delete(relationQuery);
+        try {
+            // 查询所有相关数据的source_id
+            List<VectorStoreService.SearchResult> existingData = 
+                vectorStoreService.searchByDatasourceId(MilvusConfig.SCHEMA_COLLECTION, datasourceId, 10000);
+            
+            // 逐个删除
+            for (VectorStoreService.SearchResult result : existingData) {
+                if (result.getSourceId() != null) {
+                    vectorStoreService.deleteVectors(MilvusConfig.SCHEMA_COLLECTION, result.getSourceId());
+                }
+            }
+            
+            log.info("清除了 {} 条数据源 {} 的旧schema数据（Milvus）", existingData.size(), datasourceId);
+            
+        } catch (Exception e) {
+            log.warn("清除Milvus中的旧数据时出现异常：{}", e.getMessage());
+        }
     }
 
     /**
-     * 获取指定数据源的所有schema
+     * 获取指定数据源的所有schema - 从Milvus获取
      */
     public List<DatabaseSchema> getSchemasByDatasourceId(Long datasourceId) {
-        QueryWrapper<DatabaseSchema> query = new QueryWrapper<>();
-        query.eq("datasource_id", datasourceId);
-        return databaseSchemaMapper.selectList(query);
+        try {
+            List<VectorStoreService.SearchResult> results = 
+                vectorStoreService.searchByDatasourceId(MilvusConfig.SCHEMA_COLLECTION, datasourceId, 10000);
+            
+            return results.stream()
+                .map(this::convertSearchResultToSchema)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+                
+        } catch (Exception e) {
+            log.error("从Milvus获取schema失败: {}", e.getMessage());
+            return java.util.Collections.emptyList();
+        }
     }
 
     /**
-     * 获取指定数据源的表关系
-     */
-    public List<TableRelation> getTableRelations(Long datasourceId) {
-        QueryWrapper<TableRelation> query = new QueryWrapper<>();
-        query.eq("datasource_id", datasourceId);
-        return tableRelationMapper.selectList(query);
-    }
-
-    /**
-     * 获取指定表的所有字段
-     */
-    public List<DatabaseSchema> getTableColumns(Long datasourceId, String tableName) {
-        QueryWrapper<DatabaseSchema> query = new QueryWrapper<>();
-        query.eq("datasource_id", datasourceId)
-             .eq("table_name", tableName)
-             .isNotNull("column_name");
-        return databaseSchemaMapper.selectList(query);
-    }
-
-    /**
-     * 检查数据源是否已有schema数据
+     * 检查数据源是否已有schema数据 - 从Milvus检查
      */
     public boolean hasSchemaData(Long datasourceId) {
-        QueryWrapper<DatabaseSchema> query = new QueryWrapper<>();
-        query.eq("datasource_id", datasourceId);
-        return databaseSchemaMapper.selectCount(query) > 0;
+        return vectorStoreService.hasDataForDatasource(MilvusConfig.SCHEMA_COLLECTION, datasourceId);
     }
 
     /**
-     * 获取数据源的表列表
+     * 获取schema统计信息 - 从Milvus获取
      */
-    public List<String> getTableNames(Long datasourceId) {
-        return databaseSchemaMapper.selectTableNames(datasourceId);
+    public VectorStoreService.SchemaStatistics getSchemaStatistics(Long datasourceId) {
+        return vectorStoreService.getSchemaStatistics(MilvusConfig.SCHEMA_COLLECTION, datasourceId);
     }
-
+    
     /**
-     * 获取schema统计信息
+     * 转换Milvus搜索结果为DatabaseSchema对象
      */
-    public SchemaStatistics getSchemaStatistics(Long datasourceId) {
-        SchemaStatistics stats = new SchemaStatistics();
-        stats.setDatasourceId(datasourceId);
-        
-        QueryWrapper<DatabaseSchema> schemaQuery = new QueryWrapper<>();
-        schemaQuery.eq("datasource_id", datasourceId);
-        
-        // 总记录数
-        stats.setTotalSchemaRecords(databaseSchemaMapper.selectCount(schemaQuery));
-        
-        // 表数量（columnName为null的记录）
-        QueryWrapper<DatabaseSchema> tableQuery = new QueryWrapper<>();
-        tableQuery.eq("datasource_id", datasourceId).isNull("column_name");
-        stats.setTableCount(databaseSchemaMapper.selectCount(tableQuery));
-        
-        // 字段数量（columnName不为null的记录）
-        QueryWrapper<DatabaseSchema> columnQuery = new QueryWrapper<>();
-        columnQuery.eq("datasource_id", datasourceId).isNotNull("column_name");
-        stats.setColumnCount(databaseSchemaMapper.selectCount(columnQuery));
-        
-        // 关系数量
-        QueryWrapper<TableRelation> relationQuery = new QueryWrapper<>();
-        relationQuery.eq("datasource_id", datasourceId);
-        stats.setRelationCount(tableRelationMapper.selectCount(relationQuery));
-        
-        // 有向量嵌入的记录数
-        QueryWrapper<DatabaseSchema> embeddingQuery = new QueryWrapper<>();
-        embeddingQuery.eq("datasource_id", datasourceId).isNotNull("embedding");
-        stats.setEmbeddingCount(databaseSchemaMapper.selectCount(embeddingQuery));
-        
-        return stats;
+    private DatabaseSchema convertSearchResultToSchema(VectorStoreService.SearchResult result) {
+        try {
+            DatabaseSchema schema = new DatabaseSchema();
+            
+            // 解析source_id获取schema ID
+            String sourceId = result.getSourceId();
+            if (sourceId != null && sourceId.startsWith("schema_")) {
+                try {
+                    schema.setId(Long.parseLong(sourceId.substring(7)));
+                } catch (NumberFormatException e) {
+                    log.debug("解析source_id失败: {}", sourceId);
+                }
+            }
+            
+            // 设置描述内容
+            schema.setFullDescription(result.getContent());
+            
+            // 解析metadata获取详细信息
+            if (result.getMetadata() != null) {
+                parseMetadataToSchema(result.getMetadata(), schema);
+            }
+            
+            return schema;
+            
+        } catch (Exception e) {
+            log.warn("转换搜索结果为Schema失败: {}", e.getMessage());
+            return null;
+        }
     }
-
+    
     /**
-     * Schema统计信息类
+     * 解析metadata并填充到schema对象
      */
-    public static class SchemaStatistics {
-        private Long datasourceId;
-        private Long totalSchemaRecords;
-        private Long tableCount;
-        private Long columnCount;
-        private Long relationCount;
-        private Long embeddingCount;
-        
-        // Getters and Setters
-        public Long getDatasourceId() { return datasourceId; }
-        public void setDatasourceId(Long datasourceId) { this.datasourceId = datasourceId; }
-        
-        public Long getTotalSchemaRecords() { return totalSchemaRecords; }
-        public void setTotalSchemaRecords(Long totalSchemaRecords) { this.totalSchemaRecords = totalSchemaRecords; }
-        
-        public Long getTableCount() { return tableCount; }
-        public void setTableCount(Long tableCount) { this.tableCount = tableCount; }
-        
-        public Long getColumnCount() { return columnCount; }
-        public void setColumnCount(Long columnCount) { this.columnCount = columnCount; }
-        
-        public Long getRelationCount() { return relationCount; }
-        public void setRelationCount(Long relationCount) { this.relationCount = relationCount; }
-        
-        public Long getEmbeddingCount() { return embeddingCount; }
-        public void setEmbeddingCount(Long embeddingCount) { this.embeddingCount = embeddingCount; }
+    private void parseMetadataToSchema(String metadata, DatabaseSchema schema) {
+        try {
+            // 简单的JSON解析，提取关键字段
+            schema.setDatasourceId(parseJsonLongValue(metadata, "datasourceId"));
+            
+            String tableName = parseJsonStringValue(metadata, "tableName");
+            if (tableName != null && !tableName.trim().isEmpty()) {
+                schema.setTableName(tableName);
+            }
+            
+            String columnName = parseJsonStringValue(metadata, "columnName");
+            if (columnName != null && !columnName.trim().isEmpty()) {
+                schema.setColumnName(columnName);
+            }
+            
+            String columnType = parseJsonStringValue(metadata, "columnType");
+            if (columnType != null && !columnType.trim().isEmpty()) {
+                schema.setColumnType(columnType);
+            }
+            
+        } catch (Exception e) {
+            log.debug("解析metadata失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 从JSON字符串中解析Long值
+     */
+    private Long parseJsonLongValue(String json, String key) {
+        try {
+            String pattern = "\"" + key + "\":([0-9]+)";
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher m = p.matcher(json);
+            if (m.find()) {
+                return Long.parseLong(m.group(1));
+            }
+        } catch (Exception e) {
+            log.debug("JSON Long解析失败: {}", e.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 从JSON字符串中解析String值
+     */
+    private String parseJsonStringValue(String json, String key) {
+        try {
+            String pattern = "\"" + key + "\":\"([^\"]*)\"";
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher m = p.matcher(json);
+            if (m.find()) {
+                return m.group(1);
+            }
+        } catch (Exception e) {
+            log.debug("JSON String解析失败: {}", e.getMessage());
+        }
+        return null;
     }
 }

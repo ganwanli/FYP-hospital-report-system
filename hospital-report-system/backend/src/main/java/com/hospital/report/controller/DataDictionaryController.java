@@ -19,7 +19,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/dictionary")
+@RequestMapping("/dictionary")
 @RequiredArgsConstructor
 public class DataDictionaryController {
 

@@ -22,7 +22,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/sync")
+@RequestMapping("/sync")
 @RequiredArgsConstructor
 public class SyncController {
 
