@@ -28,6 +28,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.core.annotation.Order;
 
 
 import jakarta.annotation.PostConstruct;
@@ -112,13 +113,45 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.httpFirewall(allowUrlEncodedHttpFirewall());
+        return (web) -> {
+            web.httpFirewall(allowUrlEncodedHttpFirewall());
+            web.ignoring().requestMatchers(
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-resources/**",
+                "/webjars/**",
+                "/swagger-ui.html",
+                "/error",
+                "/favicon.ico",
+                "/doc.html",
+                "/v3/api-docs/**"
+            );
+        };
     }
 
 //    @Bean
 //    public JwtAuthenticationFilter jwtAuthenticationFilter() {
 //        return new JwtAuthenticationFilter();
 //    }
+
+    @Bean
+    @Order(0)
+    public SecurityFilterChain swaggerChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-resources/**",
+                "/webjars/**",
+                "/swagger-ui.html",
+                "/doc.html",
+                "/v3/api-docs/**"
+            )
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(a -> a.anyRequest().permitAll())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        return http.build();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -152,6 +185,10 @@ public class SecurityConfig {
             })
             .authorizeHttpRequests(authorize -> {
                 log.info("配置请求授权");
+                
+                // 放行预检与常见公共资源
+                authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                authorize.requestMatchers("/error", "/favicon.ico").permitAll();
                 
                 // 配置公开访问的端点 - 注意：由于context-path是/api，Spring Security看到的路径不包含/api前缀
                 authorize.requestMatchers("/auth/**").permitAll();

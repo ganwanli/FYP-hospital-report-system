@@ -408,9 +408,11 @@ public class NaturalLanguageToSqlService {
         prompt.append("4. ✅ 所有字段必须在上述字段清单中存在\n");
         prompt.append("5. ✅ 所有表名必须在上述表清单中存在\n");
         prompt.append("6. ✅ 如需JOIN，优先使用INNER JOIN\n");
-        prompt.append("7. ✅ 添加适当的WHERE条件进行数据过滤\n");
-        prompt.append("8. ✅ 如果涉及统计，使用GROUP BY和聚合函数\n");
-        prompt.append("9. ✅ 限制结果数量，默认添加LIMIT 100\n\n");
+        prompt.append("7. ❌ 不要随意添加WHERE条件，除非用户明确指定过滤条件\n");
+        prompt.append("8. ❌ 不要添加ORDER BY子句，除非用户明确要求排序\n");
+        prompt.append("9. ❌ 不要假设业务类型、状态等字段的值，除非在字段清单中明确存在\n");
+        prompt.append("10. ✅ 如果涉及统计，使用GROUP BY和聚合函数\n");
+        prompt.append("11. ✅ 限制结果数量，默认添加LIMIT 100\n\n");
         
         // 用户查询
         prompt.append("## ❓ 用户查询\n");
@@ -645,7 +647,10 @@ public class NaturalLanguageToSqlService {
         prompt.append("**🔍 严格要求：**\n");
         prompt.append("1. 绝对不能使用上述无效字段\n");
         prompt.append("2. 只能使用下面明确列出的字段\n");
-        prompt.append("3. 如果无法找到合适的字段满足查询需求，请明确说明\n\n");
+        prompt.append("3. 不要添加用户未明确要求的WHERE条件\n");
+        prompt.append("4. 不要添加ORDER BY子句，除非用户明确要求排序\n");
+        prompt.append("5. 不要假设任何字段的具体值（如business_type、status等）\n");
+        prompt.append("6. 如果无法找到合适的字段满足查询需求，请明确说明\n\n");
         
         // 重新显示可用字段（更加强调）
         prompt.append("## ✅ **唯一可用的字段清单**\n\n");

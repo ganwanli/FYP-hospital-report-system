@@ -19,9 +19,8 @@ public class ReportConfigDTO implements Serializable {
     @Size(max = 100, message = "报表名称长度不能超过100个字符")
     private String reportName;
 
-    @NotBlank(message = "报表编码不能为空")
     @Size(max = 50, message = "报表编码长度不能超过50个字符")
-    @Pattern(regexp = "^[A-Z0-9_]+$", message = "报表编码只能包含大写字母、数字和下划线")
+    @Pattern(regexp = "^[A-Z0-9_]*$", message = "报表编码只能包含大写字母、数字和下划线")
     private String reportCode;
 
     @Size(max = 20, message = "报表类型长度不能超过20个字符")

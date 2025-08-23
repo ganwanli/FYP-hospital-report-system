@@ -44,24 +44,133 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     @Override
     @Transactional
     public ReportConfig createReport(ReportConfigDTO reportConfig) {
+        log.info("开始创建报表，报表名称：{}，原始代码：{}", reportConfig.getReportName(), reportConfig.getReportCode());
+        
+        // 如果reportCode为空，自动生成一个唯一的reportCode
+        if (reportConfig.getReportCode() == null || reportConfig.getReportCode().trim().isEmpty()) {
+            String generatedCode = generateUniqueReportCode(reportConfig.getReportName());
+            reportConfig.setReportCode(generatedCode);
+            log.info("自动生成报表代码：{}", generatedCode);
+        }
+        
         reportConfig.setCreatedTime(LocalDateTime.now());
         reportConfig.setUpdatedTime(LocalDateTime.now());
         reportConfig.setIsActive(1);
         reportConfig.setIsPublished(0);
         reportConfig.setVersion("v1.0");
 
+        // 确保必填字段有默认值
+        if (reportConfig.getReportConfig() == null || reportConfig.getReportConfig().trim().isEmpty()) {
+            reportConfig.setReportConfig("{\"columns\":[],\"pagination\":{\"pageSize\":20},\"sorting\":{\"enabled\":true},\"filtering\":{\"enabled\":true}}");
+        }
+        
+        if (reportConfig.getChartConfig() == null || reportConfig.getChartConfig().trim().isEmpty()) {
+            String chartType = reportConfig.getReportType() != null ? reportConfig.getReportType().toLowerCase() : "table";
+            String title = reportConfig.getReportName() != null ? reportConfig.getReportName() : "新报表";
+            reportConfig.setChartConfig("{\"type\":\"" + chartType + "\",\"title\":\"" + title + "\",\"showLegend\":true,\"showDataLabels\":true}");
+        }
+
         //创建一个ReportConfig对象，再把reportConfigDTO的数据复制到reportConfigPojo中
         ReportConfig reportConfigPojo = new ReportConfig();
         BeanUtils.copyProperties(reportConfig, reportConfigPojo);
+        
+        log.info("保存前的报表代码：{}", reportConfigPojo.getReportCode());
 
         //用reportConfigRepository自带的方法save保存数据，这个方法如果没有数据的id，会自动创建一个id新增一条数据进去
         ReportConfig savedReport = reportConfigRepository.save (reportConfigPojo);
+        
+        log.info("保存后的报表代码：{}", savedReport.getReportCode());
         
 //        暂时不做版本控制
         // Create initial version
 //        saveVersion(reportConfig.getReportId(), "Initial version", reportConfig.getCreatedBy());
         
         return savedReport;
+    }
+    
+    /**
+     * 生成唯一的报表代码
+     * 格式：RPT_业务前缀_YYYYMMDD_序号
+     */
+    private String generateUniqueReportCode(String reportName) {
+        // 获取当前日期字符串
+        String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        
+        // 生成业务前缀（从报表名称中提取，如果是中文则使用拼音首字母或默认前缀）
+        String businessPrefix = generateBusinessPrefix(reportName);
+        
+        // 基础代码格式
+        String baseCode = "RPT_" + businessPrefix + "_" + dateStr;
+        
+        // 查找当天同前缀的最大序号
+        int maxSequence = getMaxSequenceForToday(baseCode);
+        
+        // 生成新的序号
+        int newSequence = maxSequence + 1;
+        
+        // 最终的报表代码
+        String reportCode = baseCode + "_" + String.format("%03d", newSequence);
+        
+        return reportCode;
+    }
+    
+    /**
+     * 从报表名称生成业务前缀
+     */
+    private String generateBusinessPrefix(String reportName) {
+        if (reportName == null || reportName.trim().isEmpty()) {
+            return "GEN"; // 默认前缀 General
+        }
+        
+        // 如果包含关键词，使用对应的业务前缀
+        String name = reportName.toUpperCase();
+        if (name.contains("患者") || name.contains("病人") || name.contains("PATIENT")) {
+            return "PAT";
+        } else if (name.contains("医生") || name.contains("医师") || name.contains("DOCTOR")) {
+            return "DOC";
+        } else if (name.contains("药品") || name.contains("药物") || name.contains("DRUG") || name.contains("MEDICINE")) {
+            return "MED";
+        } else if (name.contains("检查") || name.contains("化验") || name.contains("TEST") || name.contains("EXAM")) {
+            return "TEST";
+        } else if (name.contains("手术") || name.contains("SURGERY") || name.contains("OPERATION")) {
+            return "SUR";
+        } else if (name.contains("财务") || name.contains("费用") || name.contains("FINANCE") || name.contains("COST")) {
+            return "FIN";
+        } else if (name.contains("统计") || name.contains("分析") || name.contains("STAT") || name.contains("ANALYSIS")) {
+            return "STAT";
+        } else {
+            return "GEN"; // 通用前缀
+        }
+    }
+    
+    /**
+     * 获取今天同前缀的最大序号
+     */
+    private int getMaxSequenceForToday(String baseCode) {
+        try {
+            // 查询今天以baseCode开头的所有reportCode
+            List<String> existingCodes = reportConfigRepository.findReportCodesByPrefix(baseCode + "_");
+            
+            int maxSequence = 0;
+            for (String code : existingCodes) {
+                try {
+                    // 提取序号部分（最后的3位数字）
+                    String[] parts = code.split("_");
+                    if (parts.length >= 4) {
+                        int sequence = Integer.parseInt(parts[parts.length - 1]);
+                        maxSequence = Math.max(maxSequence, sequence);
+                    }
+                } catch (NumberFormatException e) {
+                    // 忽略格式不正确的代码
+                    log.warn("Invalid report code format: {}", code);
+                }
+            }
+            
+            return maxSequence;
+        } catch (Exception e) {
+            log.error("Error getting max sequence for baseCode: {}", baseCode, e);
+            return 0; // 发生错误时返回0，从001开始
+        }
     }
 
     @Override
@@ -639,7 +748,7 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         childReport.setId(null);
         
         childReport.setReportName(childReportName);
-        childReport.setReportCode(generateUniqueReportCode(parentReport.getReportCode() + "_LINKED"));
+        childReport.setReportCode(generateUniqueReportCodeOld(parentReport.getReportCode() + "_LINKED"));
         childReport.setReportType(parentReport.getReportType());
         childReport.setReportCategoryId(parentReport.getReportCategoryId());
         childReport.setSqlTemplateId(parentReport.getSqlTemplateId());
@@ -774,7 +883,7 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         if (configMap.get("reportCode") != null) {
             String requestedCode = configMap.get("reportCode").toString();
             // 确保报表代码唯一性
-            String uniqueCode = generateUniqueReportCode(requestedCode);
+            String uniqueCode = generateUniqueReportCodeOld(requestedCode);
             report.setReportCode(uniqueCode);
         }
         if (configMap.get("description") != null) {
@@ -841,7 +950,7 @@ public class ReportConfigServiceImpl implements ReportConfigService {
      * @param baseCode 基础代码
      * @return 唯一的报表代码
      */
-    private String generateUniqueReportCode(String baseCode) {
+    private String generateUniqueReportCodeOld(String baseCode) {
         String uniqueCode = baseCode;
         int counter = 1;
         

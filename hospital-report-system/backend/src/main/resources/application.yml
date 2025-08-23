@@ -139,7 +139,7 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
-  packages-to-scan: com.hospital.report.controller
+  packages-to-scan: com.hospital.report.controller, com.hospital.report.ai.controller
   paths-to-match: /**
 
 # 应用自定义配置
@@ -165,7 +165,6 @@ app:
       - /sql-templates/**
       - /ai-assistant/**
       - /ai-schema/**
-      - /sql-knowledge/**
     # 跨域配置
     cors:
       allowed-origins: 

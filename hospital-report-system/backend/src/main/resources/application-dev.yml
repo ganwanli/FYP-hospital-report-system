@@ -76,6 +76,7 @@ app:
         - /datasource/**
         - /sql-execution/**
         - /sql-templates/**
+        - /swagger-ui.html
 #        - /system/dict/**
     cors:
       allowed-origins: 

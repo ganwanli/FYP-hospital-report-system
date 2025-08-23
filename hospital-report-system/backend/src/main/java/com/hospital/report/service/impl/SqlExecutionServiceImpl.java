@@ -41,20 +41,26 @@ public class SqlExecutionServiceImpl implements SqlExecutionService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // 根据数据源代码获取数据源配置
-            DataSource dataSourceConfig = dataSourceService.findByCode(databaseType);
+            // 根据数据源ID获取数据源配置
+            DataSource dataSourceConfig = null;
+            try {
+                // 尝试作为Long ID解析
+                Long dataSourceId = Long.parseLong(databaseType);
+                dataSourceConfig = dataSourceService.getById(dataSourceId);
+            } catch (NumberFormatException e) {
+                // 如果不是数字，尝试作为代码查找
+                dataSourceConfig = dataSourceService.findByCode(databaseType);
+            }
+            
             if (dataSourceConfig == null) {
-                dataSourceConfig = dataSourceService.findById(databaseType);
-                if (dataSourceConfig == null) {
-                    log.error("Data source configuration not found: {}", databaseType);
-                    result.put("success", false);
-                    result.put("message", "Data source configuration not found: " + databaseType);
-                    result.put("data", new ArrayList<>());
-                    result.put("columns", new ArrayList<>());
-                    result.put("rowCount", 0);
-                    result.put("executionTime", "0.000s");
-                    return result;
-                }
+                log.error("Data source configuration not found: {}", databaseType);
+                result.put("success", false);
+                result.put("message", "Data source configuration not found: " + databaseType);
+                result.put("data", new ArrayList<>());
+                result.put("columns", new ArrayList<>());
+                result.put("rowCount", 0);
+                result.put("executionTime", "0.000s");
+                return result;
             }
 
             // 获取实际的数据源连接

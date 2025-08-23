@@ -101,12 +101,22 @@ public class AIAssistantService {
                 // 1. 获取或创建对话
                 AIConversation conversation = getOrCreateConversation(request);
                 
-                // 2. 检查是否是自然语言转SQL请求
+                // 2. 检查是否是特殊的分析请求
                 if ("NATURAL_LANGUAGE_TO_SQL".equals(request.getAnalysisType()) && 
                     request.getOriginalQuery() != null && 
                     request.getDatasourceId() != null) {
                     
                     handleNaturalLanguageToSqlStream(conversation, request, sink);
+                    return;
+                }
+                
+                // 3. 检查是否是SQL智能定制请求
+                if ("SQL_CUSTOMIZATION".equals(request.getAnalysisType()) &&
+                    request.getUserRequirements() != null &&
+                    request.getOriginalSql() != null &&
+                    request.getDatasourceId() != null) {
+                    
+                    handleSqlCustomizationStream(conversation, request, sink);
                     return;
                 }
                 
@@ -476,6 +486,120 @@ public class AIAssistantService {
             // 保存错误响应
             conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, errorMessage);
             
+            sink.complete();
+        }
+    }
+    
+    /**
+     * 处理SQL智能定制的流式响应
+     */
+    private void handleSqlCustomizationStream(AIConversation conversation, AIAssistantRequest request, 
+                                             reactor.core.publisher.FluxSink<String> sink) {
+        try {
+            log.info("开始处理SQL智能定制请求，对话ID: {}, 数据源ID: {}", conversation.getId(), request.getDatasourceId());
+            
+            // 1. 检测语言
+            MultiLanguagePromptService.Language language = multiLanguagePromptService.detectLanguage(request.getUserRequirements());
+            
+            // 2. 保存用户消息
+            String userMessage = String.format("%s", request.getUserRequirements());
+            conversationService.saveMessage(conversation.getId(), MessageType.USER, userMessage);
+            
+            // 3. 获取数据源信息
+            DataSource dataSource = dataSourceService.getById(request.getDatasourceId());
+            if (dataSource == null) {
+                throw new RuntimeException("数据源不存在: " + request.getDatasourceId());
+            }
+            
+            // 4. 构建SQL定制的AI提示词
+            List<ChatRequest.ChatMessage> messages = new ArrayList<>();
+            
+            String systemPrompt = language == MultiLanguagePromptService.Language.ENGLISH ? 
+                String.format(
+                    "You are an expert SQL customization assistant. Based on the user's requirements, customize the provided SQL template.\n\n" +
+                    "Database Type: %s\n" +
+                    "Database: %s\n\n" +
+                    "Instructions:\n" +
+                    "1. Analyze user requirements for specific fields and conditions\n" +
+                    "2. Modify the original SQL based on requirements\n" +
+                    "3. Remove fields not needed by user\n" +
+                    "4. Add reasonable fields if needed\n" +
+                    "5. Optimize WHERE conditions\n" +
+                    "6. Ensure SQL correctness and executability\n\n" +
+                    "Please provide:\n" +
+                    "1. Customized SQL statement\n" +
+                    "2. Main modifications explanation\n" +
+                    "3. Field selection reasoning",
+                    dataSource.getDatabaseType(), dataSource.getDatabaseName()
+                ) :
+                String.format(
+                    "你是SQL智能定制助手。根据用户的具体需求，定制提供的SQL模板。\n\n" +
+                    "数据库类型: %s\n" +
+                    "数据库: %s\n\n" +
+                    "定制要求:\n" +
+                    "1. 分析用户需求中提到的具体字段和条件\n" +
+                    "2. 基于用户需求修改原始SQL\n" +
+                    "3. 移除用户不需要的字段\n" +
+                    "4. 添加用户需要的合理字段\n" +
+                    "5. 优化WHERE条件\n" +
+                    "6. 确保SQL正确性和可执行性\n\n" +
+                    "请提供:\n" +
+                    "1. 定制后的SQL语句\n" +
+                    "2. 主要修改说明\n" +
+                    "3. 字段选择理由",
+                    dataSource.getDatabaseType(), dataSource.getDatabaseName()
+                );
+            
+            messages.add(ChatRequest.ChatMessage.system(systemPrompt));
+            
+            String userPrompt = String.format(
+                language == MultiLanguagePromptService.Language.ENGLISH ?
+                    "User Requirements: %s\n\nOriginal SQL Template:\n%s\n\nPlease customize this SQL according to the user requirements." :
+                    "用户需求: %s\n\n原始SQL模板:\n%s\n\n请根据用户需求定制这个SQL。",
+                request.getUserRequirements(),
+                request.getOriginalSql()
+            );
+            
+            messages.add(ChatRequest.ChatMessage.user(userPrompt));
+            
+            // 5. 调用AI进行流式SQL定制
+            StringBuilder fullResponse = new StringBuilder();
+            
+            deepSeekClient.chatStream(messages)
+                .doOnNext(chunk -> {
+                    fullResponse.append(chunk);
+                    sink.next(chunk);
+                })
+                .doOnComplete(() -> {
+                    // 保存完整的AI响应
+                    conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, fullResponse.toString());
+                    sink.complete();
+                    log.info("SQL智能定制流式响应完成，对话ID: {}", conversation.getId());
+                })
+                .doOnError(error -> {
+                    log.error("SQL智能定制流式响应失败", error);
+                    
+                    String errorMessage = language == MultiLanguagePromptService.Language.ENGLISH ?
+                        "SQL customization failed. Please try again later. Error: " + error.getMessage() :
+                        "SQL定制失败，请稍后重试。错误: " + error.getMessage();
+                    
+                    sink.next(errorMessage);
+                    conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, errorMessage);
+                    sink.complete();
+                })
+                .subscribe();
+                
+        } catch (Exception e) {
+            log.error("处理SQL智能定制流式请求失败", e);
+            
+            // 检测语言以提供合适的错误消息
+            MultiLanguagePromptService.Language language = multiLanguagePromptService.detectLanguage(request.getUserRequirements());
+            String errorMessage = language == MultiLanguagePromptService.Language.ENGLISH ?
+                "SQL customization request failed. Please check your requirements and try again. Error: " + e.getMessage() :
+                "SQL定制请求失败，请检查您的需求并重试。错误: " + e.getMessage();
+            
+            sink.next(errorMessage);
+            conversationService.saveMessage(conversation.getId(), MessageType.ASSISTANT, errorMessage);
             sink.complete();
         }
     }
