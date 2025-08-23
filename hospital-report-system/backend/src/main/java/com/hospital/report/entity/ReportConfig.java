@@ -141,6 +141,10 @@ public class ReportConfig {
     @Column(name = "trigger_param_field", length = 100, columnDefinition = "varchar(100) DEFAULT NULL COMMENT '触发参数字段名(如CASE_NO)'")
     private String triggerParamField;
 
+    // 父子报表标识字段
+    @Column(name = "is_parent_report", columnDefinition = "tinyint DEFAULT '1' COMMENT '是否为父报表或独立报表(1:父报表/独立报表显示在列表中,0:子报表不显示在列表中)'")
+    private Integer isParentReport = 1;
+
     // 外键关联 - 如果需要的话可以取消注释
     /*
     @ManyToOne(fetch = FetchType.LAZY)

@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -176,30 +177,288 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     @Override
     @Transactional
     public ReportConfig updateReport(ReportConfig reportConfig) {
-        ReportConfig existingReport = reportConfigRepository.findById(reportConfig.getId()).orElseThrow(() -> new IllegalArgumentException("Report not found"));
-//                reportConfigMapper.selectById(reportConfig.getId());
-//        if (existingReport == null) {
-//            throw new RuntimeException("Report not found");
-//        }
+        log.info("开始更新报表，ID: {}, linkedReportId: {}, triggerParamField: {}", 
+                reportConfig.getId(), reportConfig.getLinkedReportId(), reportConfig.getTriggerParamField());
         
-        reportConfig.setUpdatedTime(LocalDateTime.now());
-
-        reportConfigRepository.save(reportConfig);
+        System.out.println("Service层：开始处理更新报表，ID: " + reportConfig.getId());
         
+        // 检查是否只是更新链接关系 - 使用更简单的检测逻辑
+        boolean isLinkingOnlyUpdate = isLinkingOnlyUpdate(reportConfig);
+        System.out.println("Service层：检测是否为链接更新: " + isLinkingOnlyUpdate);
+        
+        if (isLinkingOnlyUpdate) {
+            log.info("检测到仅更新链接关系，使用专门的更新方法");
+            System.out.println("Service层：执行链接更新逻辑");
+            
+            // 获取现有报表实体
+            ReportConfig existingReport = reportConfigRepository.findById(reportConfig.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+            System.out.println("Service层：成功获取现有报表，ID: " + existingReport.getId());
+            
+            // 只更新链接相关字段
+            existingReport.setLinkedReportId(reportConfig.getLinkedReportId());
+            existingReport.setTriggerParamField(reportConfig.getTriggerParamField());
+            existingReport.setUpdatedTime(LocalDateTime.now());
+            
+            System.out.println("Service层：准备保存链接更新");
+            ReportConfig savedReport = reportConfigRepository.save(existingReport);
+            System.out.println("Service层：链接更新保存完成，ID: " + savedReport.getId());
+            
+            log.info("链接关系更新完成 - linkedReportId: {}, triggerParamField: {}", 
+                    savedReport.getLinkedReportId(), savedReport.getTriggerParamField());
+            
+            System.out.println("Service层：准备返回链接更新结果");
+            return savedReport;
+        }
+        
+        System.out.println("Service层：执行常规更新逻辑");
+        // 常规更新 - 先获取现有实体，然后逐字段更新
+        ReportConfig existingReport = reportConfigRepository.findById(reportConfig.getId())
+            .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+        
+        // 逐字段更新，只更新非null字段
+        updateNonNullFields(existingReport, reportConfig);
+        existingReport.setUpdatedTime(LocalDateTime.now());
+        
+        ReportConfig saved = reportConfigRepository.save(existingReport);
+        System.out.println("Service层：常规更新保存完成，ID: " + saved.getId());
+        
+        log.info("更新后的报表关联信息 - linkedReportId: {}, triggerParamField: {}", 
+                saved.getLinkedReportId(), saved.getTriggerParamField());
 
-
-        return getReportById(reportConfig.getId());
+        System.out.println("Service层：准备返回常规更新结果");
+        return saved;
+    }
+    
+    /**
+     * 检查是否只是链接更新（只传递了linkedReportId和/或triggerParamField）
+     */
+    private boolean isLinkingOnlyUpdate(ReportConfig input) {
+        try {
+            System.out.println("Service层：检查是否为纯链接更新");
+            
+            // 检查关键业务字段是否都为null
+            boolean hasOnlyLinkingFields = 
+                input.getReportName() == null &&
+                input.getReportCode() == null &&
+                input.getReportType() == null &&
+                input.getDatasourceId() == null &&
+                input.getSqlTemplateId() == null &&
+                input.getReportCategoryId() == null &&
+                input.getAccessLevel() == null &&
+                input.getDescription() == null &&
+                input.getVersion() == null &&
+                input.getReportConfig() == null &&
+                input.getChartConfig() == null &&
+                input.getExportConfig() == null &&
+                // 检查是否设置了链接字段
+                (input.getLinkedReportId() != null || input.getTriggerParamField() != null);
+            
+            System.out.println("Service层：链接更新检查结果: " + hasOnlyLinkingFields);
+            return hasOnlyLinkingFields;
+        } catch (Exception e) {
+            System.out.println("Service层：检查链接更新时发生异常: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * 只更新非null字段
+     */
+    private void updateNonNullFields(ReportConfig existing, ReportConfig input) {
+        if (input.getReportName() != null) existing.setReportName(input.getReportName());
+        if (input.getReportCode() != null) existing.setReportCode(input.getReportCode());
+        if (input.getReportType() != null) existing.setReportType(input.getReportType());
+        if (input.getDatasourceId() != null) existing.setDatasourceId(input.getDatasourceId());
+        if (input.getSqlTemplateId() != null) existing.setSqlTemplateId(input.getSqlTemplateId());
+        if (input.getReportCategoryId() != null) existing.setReportCategoryId(input.getReportCategoryId());
+        if (input.getAccessLevel() != null) existing.setAccessLevel(input.getAccessLevel());
+        if (input.getDescription() != null) existing.setDescription(input.getDescription());
+        if (input.getVersion() != null) existing.setVersion(input.getVersion());
+        if (input.getReportConfig() != null) existing.setReportConfig(input.getReportConfig());
+        if (input.getChartConfig() != null) existing.setChartConfig(input.getChartConfig());
+        if (input.getExportConfig() != null) existing.setExportConfig(input.getExportConfig());
+        if (input.getLinkedReportId() != null) existing.setLinkedReportId(input.getLinkedReportId());
+        if (input.getTriggerParamField() != null) existing.setTriggerParamField(input.getTriggerParamField());
+        if (input.getCacheEnabled() != null) existing.setCacheEnabled(input.getCacheEnabled());
+        if (input.getCacheTimeout() != null) existing.setCacheTimeout(input.getCacheTimeout());
+        if (input.getRefreshInterval() != null) existing.setRefreshInterval(input.getRefreshInterval());
+        if (input.getIsPublished() != null) existing.setIsPublished(input.getIsPublished());
+        if (input.getIsActive() != null) existing.setIsActive(input.getIsActive());
+        if (input.getApprovalStatus() != null) existing.setApprovalStatus(input.getApprovalStatus());
+        if (input.getBusinessType() != null) existing.setBusinessType(input.getBusinessType());
+        if (input.getDepartmentCode() != null) existing.setDepartmentCode(input.getDepartmentCode());
+        if (input.getUsageType() != null) existing.setUsageType(input.getUsageType());
+        if (input.getUpdatedBy() != null) existing.setUpdatedBy(input.getUpdatedBy());
     }
 
     @Override
     @Transactional
     public void deleteReport(Long reportId) {
-        // Delete in order: components, data sources, versions, then report
+        log.info("开始删除报表ID: {}", reportId);
+        
+        // 获取要删除的报表信息
+        ReportConfig reportToDelete = reportConfigRepository.findById(reportId)
+            .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
+        
+        // 如果报表有关联的子报表，必须先删除所有子报表
+        if (reportToDelete.getLinkedReportId() != null) {
+            log.info("检测到父报表(ID: {})有关联的子报表(ID: {})，必须先删除子报表", reportId, reportToDelete.getLinkedReportId());
+            try {
+                // 递归删除子报表（这会处理嵌套的子报表）
+                deleteReport(reportToDelete.getLinkedReportId());
+                log.info("成功删除关联的子报表ID: {}", reportToDelete.getLinkedReportId());
+            } catch (Exception e) {
+                log.error("删除关联子报表时出现异常: {}", e.getMessage());
+                throw new RuntimeException("无法删除关联的子报表，删除操作终止: " + e.getMessage());
+            }
+        }
+        
+        // 清除所有对当前报表的引用（处理当前报表作为其他报表子报表的情况）
+        clearAllReferencesToReport(reportId);
+        
+        // 安全删除报表
+        log.info("删除报表ID: {} 的主记录", reportId);
         reportConfigRepository.deleteById(reportId);
-//        reportComponentMapper.deleteByReportId(reportId);
-//        reportDataSourceMapper.deleteByReportId(reportId);
-//        reportVersionMapper.deleteByReportId(reportId);
-//        reportConfigMapper.deleteById(reportId);
+        log.info("成功删除报表ID: {}", reportId);
+    }
+
+    @Override
+    @Transactional
+    public int cascadeDeleteReportWithChildren(Long reportId) {
+        log.info("开始级联删除报表ID: {} 及其所有子报表", reportId);
+        
+        // 获取要删除的报表信息
+        ReportConfig reportToDelete = reportConfigRepository.findById(reportId)
+            .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
+        
+        int deletedCount = 0;
+        
+        // 首先，收集所有需要删除的报表IDs
+        List<Long> allReportIdsToDelete = new ArrayList<>();
+        collectReportIdsForDeletion(reportToDelete, allReportIdsToDelete);
+        log.info("收集到需要删除的报表IDs: {}", allReportIdsToDelete);
+        
+        // 重要：在删除任何报表之前，清除所有对这些报表的引用
+        for (Long idToDelete : allReportIdsToDelete) {
+            clearAllReferencesToReport(idToDelete);
+        }
+        
+        // 现在可以安全地删除所有报表（顺序不再重要，因为引用已被清除）
+        for (Long idToDelete : allReportIdsToDelete) {
+            try {
+                log.info("删除报表ID: {}", idToDelete);
+                reportConfigRepository.deleteById(idToDelete);
+                deletedCount++;
+            } catch (Exception e) {
+                log.error("删除报表ID: {} 时出现异常: {}", idToDelete, e.getMessage(), e);
+            }
+        }
+        
+        log.info("级联删除完成，共删除了 {} 个报表", deletedCount);
+        return deletedCount;
+    }
+    
+    /**
+     * 收集所有需要删除的报表ID（深度优先遍历）
+     * @param report 当前报表
+     * @param reportIds 收集的报表ID列表
+     */
+    private void collectReportIdsForDeletion(ReportConfig report, List<Long> reportIds) {
+        // 避免重复添加
+        if (reportIds.contains(report.getId())) {
+            return;
+        }
+        
+        // 添加当前报表ID
+        reportIds.add(report.getId());
+        log.info("收集删除报表ID: {}", report.getId());
+        
+        // 递归处理子报表
+        if (report.getLinkedReportId() != null) {
+            try {
+                ReportConfig childReport = reportConfigRepository.findById(report.getLinkedReportId())
+                    .orElse(null);
+                
+                if (childReport != null) {
+                    log.info("发现子报表ID: {} (父报表ID: {})", childReport.getId(), report.getId());
+                    collectReportIdsForDeletion(childReport, reportIds);
+                }
+            } catch (Exception e) {
+                log.warn("获取子报表ID: {} 时出现异常: {}", report.getLinkedReportId(), e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * 清除所有对指定报表的引用
+     * @param reportIdToDelete 要删除的报表ID
+     */
+    private void clearAllReferencesToReport(Long reportIdToDelete) {
+        try {
+            log.info("清除所有对报表ID: {} 的引用", reportIdToDelete);
+            
+            // 查找所有引用了该报表作为子报表的父报表
+            List<ReportConfig> parentReports = reportConfigRepository.findByLinkedReportId(reportIdToDelete);
+            log.info("找到 {} 个父报表引用了报表ID: {}", parentReports.size(), reportIdToDelete);
+            
+            for (ReportConfig parentReport : parentReports) {
+                log.info("清除父报表ID: {} 对子报表ID: {} 的引用", parentReport.getId(), reportIdToDelete);
+                parentReport.setLinkedReportId(null);
+                parentReport.setTriggerParamField(null);
+                parentReport.setUpdatedTime(LocalDateTime.now());
+                reportConfigRepository.save(parentReport);
+                log.info("已清除父报表ID: {} 的引用", parentReport.getId());
+            }
+        } catch (Exception e) {
+            log.error("清除对报表ID: {} 的引用时出现异常: {}", reportIdToDelete, e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 清除所有父报表对即将删除的报表的引用，避免外键约束冲突
+     * @param reportIdsToDelete 将要删除的报表ID列表
+     * @deprecated 使用 clearAllReferencesToReport 替代
+     */
+    @Deprecated
+    private void clearParentReferences(List<Long> reportIdsToDelete) {
+        for (Long reportIdToDelete : reportIdsToDelete) {
+            clearAllReferencesToReport(reportIdToDelete);
+        }
+    }
+    
+    /**
+     * 递归删除子报表（保留此方法用于兼容，但推荐使用新的级联删除逻辑）
+     * @param parentReport 父报表
+     * @return 删除的子报表数量
+     * @deprecated 使用 cascadeDeleteReportWithChildren 替代
+     */
+    @Deprecated
+    private int cascadeDeleteChildren(ReportConfig parentReport) {
+        int deletedCount = 0;
+        
+        if (parentReport.getLinkedReportId() != null) {
+            try {
+                ReportConfig childReport = reportConfigRepository.findById(parentReport.getLinkedReportId())
+                    .orElse(null);
+                
+                if (childReport != null) {
+                    log.info("删除子报表ID: {} (父报表ID: {})", childReport.getId(), parentReport.getId());
+                    
+                    // 递归删除子报表的子报表（如果存在）
+                    deletedCount += cascadeDeleteChildren(childReport);
+                    
+                    // 删除当前子报表
+                    reportConfigRepository.deleteById(childReport.getId());
+                    deletedCount++;
+                }
+            } catch (Exception e) {
+                log.warn("删除子报表ID: {} 时出现异常: {}", parentReport.getLinkedReportId(), e.getMessage());
+            }
+        }
+        
+        return deletedCount;
     }
 
     @Override
@@ -684,20 +943,16 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     public ReportConfig setLinkedReport(Long parentReportId, Long childReportId, String triggerParamField) {
         log.info("Setting linked report: parent={}, child={}, triggerField={}", parentReportId, childReportId, triggerParamField);
         
-        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
-            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
-        
+        // 验证子报表是否存在
         ReportConfig childReport = reportConfigRepository.findById(childReportId)
             .orElseThrow(() -> new IllegalArgumentException("Child report not found: " + childReportId));
         
-        // 设置关联关系
-        parentReport.setLinkedReportId(childReportId);
-        parentReport.setTriggerParamField(triggerParamField);
-        parentReport.setUpdatedTime(LocalDateTime.now());
+        // 使用专门的部分更新方法更新父报表的关联关系
+        updateParentReportLinking(parentReportId, childReportId, triggerParamField);
         
-        ReportConfig saved = reportConfigRepository.save(parentReport);
-        log.info("Successfully set linked report for parent report: {}", parentReportId);
-        return saved;
+        // 返回更新后的父报表
+        return reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found after update: " + parentReportId));
     }
 
     @Override
@@ -705,16 +960,12 @@ public class ReportConfigServiceImpl implements ReportConfigService {
     public ReportConfig removeLinkedReport(Long parentReportId) {
         log.info("Removing linked report for parent: {}", parentReportId);
         
-        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
-            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        // 使用专门的部分更新方法移除父报表的关联关系
+        updateParentReportLinking(parentReportId, null, null);
         
-        parentReport.setLinkedReportId(null);
-        parentReport.setTriggerParamField(null);
-        parentReport.setUpdatedTime(LocalDateTime.now());
-        
-        ReportConfig saved = reportConfigRepository.save(parentReport);
-        log.info("Successfully removed linked report for parent report: {}", parentReportId);
-        return saved;
+        // 返回更新后的父报表
+        return reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found after update: " + parentReportId));
     }
 
     @Override
@@ -775,15 +1026,13 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         // 重要：确保子报表不会继承父报表的关联设置
         childReport.setLinkedReportId(null);
         childReport.setTriggerParamField(null);
+        childReport.setIsParentReport(0); // 标记为子报表，不在列表中显示
         
         // 保存子报表
         ReportConfig savedChildReport = reportConfigRepository.save(childReport);
         
-        // 直接在当前事务中更新父报表的关联关系，避免重新获取实体
-        parentReport.setLinkedReportId(savedChildReport.getId());
-        parentReport.setTriggerParamField(triggerParamField);
-        parentReport.setUpdatedTime(LocalDateTime.now());
-        reportConfigRepository.save(parentReport);
+        // 使用专门的部分更新方法更新父报表的关联关系
+        updateParentReportLinking(parentReportId, savedChildReport.getId(), triggerParamField);
         
         log.info("Successfully created linked report with ID: {} and linked to parent: {}", savedChildReport.getId(), parentReportId);
         return savedChildReport;
@@ -812,6 +1061,22 @@ public class ReportConfigServiceImpl implements ReportConfigService {
             parentReport.setId(null); // 确保是新记录
             updateReportFromMap(parentReport, parentReportConfig);
             
+            // 确保父报表标记正确（如果前端没有传，默认为1）
+            if (parentReport.getIsParentReport() == null) {
+                parentReport.setIsParentReport(1);
+            }
+            
+            // 验证必需字段
+            if (parentReport.getDatasourceId() == null) {
+                throw new IllegalArgumentException("Parent report datasourceId is required");
+            }
+            if (parentReport.getSqlTemplateId() == null) {
+                throw new IllegalArgumentException("Parent report sqlTemplateId is required");
+            }
+            if (parentReport.getReportName() == null || parentReport.getReportName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Parent report name is required");
+            }
+            
             // 设置创建和更新信息
             parentReport.setCreatedBy(createdBy);
             parentReport.setUpdatedBy(createdBy);
@@ -830,7 +1095,27 @@ public class ReportConfigServiceImpl implements ReportConfigService {
             
             if (parentReportConfig != null) {
                 log.info("Updating existing parent report with new configuration");
+                // 先保存当前的关键字段值
+                Long currentDatasourceId = parentReport.getDatasourceId();
+                Long currentSqlTemplateId = parentReport.getSqlTemplateId();
+                String currentReportName = parentReport.getReportName();
+                
                 updateReportFromMap(parentReport, parentReportConfig);
+                
+                // 确保关键字段不为空
+                if (parentReport.getDatasourceId() == null && currentDatasourceId != null) {
+                    parentReport.setDatasourceId(currentDatasourceId);
+                    log.warn("Restored datasourceId from current value: {}", currentDatasourceId);
+                }
+                if (parentReport.getSqlTemplateId() == null && currentSqlTemplateId != null) {
+                    parentReport.setSqlTemplateId(currentSqlTemplateId);
+                    log.warn("Restored sqlTemplateId from current value: {}", currentSqlTemplateId);
+                }
+                if ((parentReport.getReportName() == null || parentReport.getReportName().trim().isEmpty()) && currentReportName != null) {
+                    parentReport.setReportName(currentReportName);
+                    log.warn("Restored reportName from current value: {}", currentReportName);
+                }
+                
                 parentReport.setUpdatedBy(createdBy);
                 parentReport.setUpdatedTime(LocalDateTime.now());
                 parentReport = reportConfigRepository.save(parentReport);
@@ -845,11 +1130,15 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         childReport.setId(null);
         
         // 从配置数据中设置子报表属性
+        log.info("Child report config before updateReportFromMap: {}", childReportConfig);
         updateReportFromMap(childReport, childReportConfig);
+        log.info("Child report isParentReport after updateReportFromMap: {}", childReport.getIsParentReport());
         
         // 设置子报表特有的关联信息
         childReport.setLinkedReportId(null); // 子报表本身不指向其他报表
         childReport.setTriggerParamField(null); // 子报表本身不包含触发参数
+        childReport.setIsParentReport(0); // 强制标记为子报表，不在列表中显示
+        log.info("Child report isParentReport after forced setting: {}", childReport.getIsParentReport());
         
         // 设置创建和更新信息
         childReport.setCreatedBy(createdBy);
@@ -862,11 +1151,8 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         ReportConfig savedChildReport = reportConfigRepository.save(childReport);
         log.info("Child report created with ID: {}", savedChildReport.getId());
         
-        // 3. 更新父报表的关联关系
-        parentReport.setLinkedReportId(savedChildReport.getId());
-        parentReport.setTriggerParamField(triggerParamField);
-        parentReport.setUpdatedTime(LocalDateTime.now());
-        parentReport = reportConfigRepository.save(parentReport);
+        // 3. 更新父报表的关联关系 - 使用专门的部分更新方法避免null字段问题
+        updateParentReportLinking(parentReport.getId(), savedChildReport.getId(), triggerParamField);
         
         log.info("Successfully created linked report with parent data - childId: {}, parentId: {}", 
                 savedChildReport.getId(), parentReport.getId());
@@ -877,10 +1163,10 @@ public class ReportConfigServiceImpl implements ReportConfigService {
      * 从Map配置数据更新ReportConfig实体
      */
     private void updateReportFromMap(ReportConfig report, Map<String, Object> configMap) {
-        if (configMap.get("reportName") != null) {
+        if (configMap.get("reportName") != null && !configMap.get("reportName").toString().trim().isEmpty()) {
             report.setReportName(configMap.get("reportName").toString());
         }
-        if (configMap.get("reportCode") != null) {
+        if (configMap.get("reportCode") != null && !configMap.get("reportCode").toString().trim().isEmpty()) {
             String requestedCode = configMap.get("reportCode").toString();
             // 确保报表代码唯一性
             String uniqueCode = generateUniqueReportCodeOld(requestedCode);
@@ -889,10 +1175,10 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         if (configMap.get("description") != null) {
             report.setDescription(configMap.get("description").toString());
         }
-        if (configMap.get("reportType") != null) {
+        if (configMap.get("reportType") != null && !configMap.get("reportType").toString().trim().isEmpty()) {
             report.setReportType(configMap.get("reportType").toString());
         }
-        if (configMap.get("accessLevel") != null) {
+        if (configMap.get("accessLevel") != null && !configMap.get("accessLevel").toString().trim().isEmpty()) {
             report.setAccessLevel(configMap.get("accessLevel").toString());
         }
         if (configMap.get("businessType") != null) {
@@ -904,32 +1190,71 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         if (configMap.get("usageType") != null) {
             report.setUsageType(configMap.get("usageType").toString());
         }
-        if (configMap.get("version") != null) {
+        if (configMap.get("version") != null && !configMap.get("version").toString().trim().isEmpty()) {
             report.setVersion(configMap.get("version").toString());
         }
-        if (configMap.get("sqlTemplateId") != null) {
-            report.setSqlTemplateId(Long.valueOf(configMap.get("sqlTemplateId").toString()));
+        // 关键字段：只在有效值时才更新
+        if (configMap.get("sqlTemplateId") != null && !configMap.get("sqlTemplateId").toString().trim().isEmpty()) {
+            try {
+                Long sqlTemplateId = Long.valueOf(configMap.get("sqlTemplateId").toString());
+                if (sqlTemplateId > 0) {
+                    report.setSqlTemplateId(sqlTemplateId);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid sqlTemplateId value: {}", configMap.get("sqlTemplateId"));
+            }
         }
-        if (configMap.get("datasourceId") != null) {
-            report.setDatasourceId(Long.valueOf(configMap.get("datasourceId").toString()));
+        // 关键字段：只在有效值时才更新
+        if (configMap.get("datasourceId") != null && !configMap.get("datasourceId").toString().trim().isEmpty()) {
+            try {
+                Long datasourceId = Long.valueOf(configMap.get("datasourceId").toString());
+                if (datasourceId > 0) {
+                    report.setDatasourceId(datasourceId);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid datasourceId value: {}", configMap.get("datasourceId"));
+            }
         }
-        if (configMap.get("categoryId") != null && configMap.get("categoryId") != "") {
-            report.setReportCategoryId(Long.valueOf(configMap.get("categoryId").toString()));
+        if (configMap.get("categoryId") != null && !configMap.get("categoryId").toString().trim().isEmpty()) {
+            try {
+                Long categoryId = Long.valueOf(configMap.get("categoryId").toString());
+                if (categoryId > 0) {
+                    report.setReportCategoryId(categoryId);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid categoryId value: {}", configMap.get("categoryId"));
+            }
         }
-//        if (configMap.get("isPublished") != null) {
-//            report.setIsPublished(Boolean.valueOf(configMap.get("isPublic").toString()) ? 1 : 0);
-//        }
         if (configMap.get("isPublished") != null) {
-            report.setIsPublished(Integer.valueOf(configMap.get("isPublished").toString()));
+            try {
+                report.setIsPublished(Integer.valueOf(configMap.get("isPublished").toString()));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid isPublished value: {}", configMap.get("isPublished"));
+            }
         }
         if (configMap.get("isActive") != null) {
-            report.setIsActive(Integer.valueOf(configMap.get("isActive").toString()));
+            try {
+                report.setIsActive(Integer.valueOf(configMap.get("isActive").toString()));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid isActive value: {}", configMap.get("isActive"));
+            }
         }
         if (configMap.get("approvalStatus") != null) {
-            report.setApprovalStatus(Integer.valueOf(configMap.get("approvalStatus").toString()));
+            try {
+                report.setApprovalStatus(Integer.valueOf(configMap.get("approvalStatus").toString()));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid approvalStatus value: {}", configMap.get("approvalStatus"));
+            }
         }
         if (configMap.get("chartConfig") != null) {
             report.setChartConfig(configMap.get("chartConfig").toString());
+        }
+        if (configMap.get("isParentReport") != null) {
+            try {
+                report.setIsParentReport(Integer.valueOf(configMap.get("isParentReport").toString()));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid isParentReport value: {}", configMap.get("isParentReport"));
+            }
         }
         
 //        // 处理tags - 可能是List或字符串
@@ -968,5 +1293,51 @@ public class ReportConfigServiceImpl implements ReportConfigService {
         }
         
         return uniqueCode;
+    }
+    
+    /**
+     * 专门用于更新父报表关联关系的方法，避免部分更新导致其他字段变为null的问题
+     * @param parentReportId 父报表ID
+     * @param childReportId 子报表ID（可以为null表示移除关联）
+     * @param triggerParamField 触发参数字段（可以为null表示移除关联）
+     */
+    @Transactional
+    private void updateParentReportLinking(Long parentReportId, Long childReportId, String triggerParamField) {
+        log.info("Updating parent report linking - parentId: {}, childId: {}, triggerField: {}", 
+                 parentReportId, childReportId, triggerParamField);
+        
+        // 先获取完整的父报表实体
+        ReportConfig parentReport = reportConfigRepository.findById(parentReportId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent report not found: " + parentReportId));
+        
+        log.info("Parent report before linking update - datasourceId: {}, sqlTemplateId: {}, linkedReportId: {}", 
+                 parentReport.getDatasourceId(), parentReport.getSqlTemplateId(), parentReport.getLinkedReportId());
+        
+        // 只更新关联字段，保持其他字段不变
+        parentReport.setLinkedReportId(childReportId);
+        parentReport.setTriggerParamField(triggerParamField);
+        parentReport.setUpdatedTime(LocalDateTime.now());
+        
+        // 验证关键字段是否存在（仅在需要的时候验证）
+        if (parentReport.getDatasourceId() == null) {
+            log.error("Critical error: datasourceId is null before save for parent report {}", parentReportId);
+            throw new IllegalStateException("Parent report datasourceId cannot be null");
+        }
+        
+        if (parentReport.getSqlTemplateId() == null) {
+            log.error("Critical error: sqlTemplateId is null before save for parent report {}", parentReportId);
+            throw new IllegalStateException("Parent report sqlTemplateId cannot be null");
+        }
+        
+        log.info("Parent report before save - datasourceId: {}, sqlTemplateId: {}, linkedReportId: {}", 
+                 parentReport.getDatasourceId(), parentReport.getSqlTemplateId(), parentReport.getLinkedReportId());
+        
+        // 保存更新
+        ReportConfig savedParent = reportConfigRepository.save(parentReport);
+        
+        String operationType = (childReportId == null) ? "removed" : "set";
+        log.info("Parent report linking {} - ID: {}, linkedReportId: {}, triggerParamField: {}, datasourceId: {}", 
+                 operationType, savedParent.getId(), savedParent.getLinkedReportId(), 
+                 savedParent.getTriggerParamField(), savedParent.getDatasourceId());
     }
 }

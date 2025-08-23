@@ -51,10 +51,24 @@ public class ReportController {
     @PutMapping("/{id}")
     public Result<ReportConfig> updateReport(@PathVariable Long id, @RequestBody ReportConfig reportConfig) {
         try {
+            System.out.println("接收到更新报表请求，ID: " + id + ", 请求体中的linkedReportId: " + reportConfig.getLinkedReportId() + ", triggerParamField: " + reportConfig.getTriggerParamField());
             reportConfig.setId(id);
+            
+            System.out.println("调用 reportConfigService.updateReport() 方法...");
             ReportConfig updated = reportConfigService.updateReport(reportConfig);
+            System.out.println("reportConfigService.updateReport() 方法调用完成");
+            
+            if (updated == null) {
+                System.out.println("警告：updateReport() 返回了 null");
+                return Result.error("Update report returned null");
+            }
+            
+            System.out.println("检查返回对象的ID: " + updated.getId());
+            System.out.println("更新完成，返回的linkedReportId: " + updated.getLinkedReportId() + ", triggerParamField: " + updated.getTriggerParamField());
             return Result.success(updated);
         } catch (Exception e) {
+            System.out.println("更新报表时发生异常: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace();
             return Result.error("Failed to update report: " + e.getMessage());
         }
     }
@@ -66,6 +80,19 @@ public class ReportController {
             return Result.success();
         } catch (Exception e) {
             return Result.error("Failed to delete report: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/cascade")
+    public Result<Map<String, Object>> cascadeDeleteReport(@PathVariable Long id) {
+        try {
+            int deletedCount = reportConfigService.cascadeDeleteReportWithChildren(id);
+            Map<String, Object> result = new HashMap<>();
+            result.put("deletedCount", deletedCount);
+            result.put("message", String.format("Successfully deleted %d reports (including parent and children)", deletedCount));
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error("Failed to cascade delete report: " + e.getMessage());
         }
     }
 

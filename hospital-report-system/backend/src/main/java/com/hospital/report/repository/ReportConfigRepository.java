@@ -26,4 +26,11 @@ public interface  ReportConfigRepository extends CrudRepository<ReportConfig,Lon
     @Query("SELECT r.reportCode FROM ReportConfig r WHERE r.reportCode LIKE :prefix%")
     List<String> findReportCodesByPrefix(@Param("prefix") String prefix);
 
+    /**
+     * 根据关联的子报表ID查找父报表
+     * @param linkedReportId 关联的子报表ID
+     * @return 父报表列表
+     */
+    List<ReportConfig> findByLinkedReportId(Long linkedReportId);
+
 }

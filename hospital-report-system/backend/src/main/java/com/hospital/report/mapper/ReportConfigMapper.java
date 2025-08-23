@@ -25,6 +25,7 @@ public interface ReportConfigMapper extends BaseMapper<ReportConfig> {
             "LEFT JOIN sys_user u1 ON r.created_by = u1.id " +
             "LEFT JOIN sys_user u2 ON r.updated_by = u2.id " +
             "WHERE 1=1 " +
+            "AND (r.is_parent_report IS NULL OR r.is_parent_report != 0) " +
             "<if test='reportName != null and reportName != \"\"'>" +
             "AND r.report_name LIKE CONCAT('%', #{reportName}, '%') " +
             "</if>" +

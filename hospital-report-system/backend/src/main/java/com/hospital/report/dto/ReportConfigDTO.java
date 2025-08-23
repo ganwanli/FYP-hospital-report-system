@@ -85,6 +85,10 @@ public class ReportConfigDTO implements Serializable {
     @Max(value = 1, message = "删除状态只能为0或1")
     private Integer isDeleted;
 
+    @Min(value = 0, message = "删除状态只能为0或1")
+    @Max(value = 1, message = "删除状态只能为0或1")
+    private Integer isParentReport;
+
     private LocalDateTime createdTime;
 
     private LocalDateTime updatedTime;
@@ -113,6 +117,13 @@ public class ReportConfigDTO implements Serializable {
 
     @Size(max = 30, message = "使用类型长度不能超过30个字符")
     private String usageType;
+
+    // 子报表关联字段
+    @Positive(message = "关联子报表ID必须为正数")
+    private Long linkedReportId;
+
+    @Size(max = 100, message = "触发参数字段名长度不能超过100个字符")
+    private String triggerParamField;
 
     // 非持久化字段 - 用于显示
     private String createdByName;

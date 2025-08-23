@@ -16,7 +16,20 @@ public interface ReportConfigService {
 
     ReportConfig updateReport(ReportConfig reportConfig);
 
+    /**
+     * 删除报表（支持级联删除）
+     * - 如果是父报表，会先递归删除关联的子报表
+     * - 如果是子报表，会清除父报表中的关联关系
+     * @param reportId 报表ID
+     */
     void deleteReport(Long reportId);
+
+    /**
+     * 级联删除报表及其所有关联的子报表
+     * @param reportId 父报表ID
+     * @return 删除的报表数量（包括父报表和子报表）
+     */
+    int cascadeDeleteReportWithChildren(Long reportId);
 
     ReportConfig getReportById(Long reportId);
 
